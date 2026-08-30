@@ -35,6 +35,7 @@ export const Route = createFileRoute("/api/public/hooks/streak-emails")({
           value ? Math.floor((today.getTime() - new Date(value).getTime()) / 86400000) : null;
 
         let sent = 0;
+        let failed = 0;
         for (const profile of profiles ?? []) {
           if (!profile.email) continue;
           const name = profile.display_name ?? "student";
@@ -44,7 +45,14 @@ export const Route = createFileRoute("/api/public/hooks/streak-emails")({
 
           if (inactive >= 14) {
             if (profile.farewell_sent) continue;
-            await sendMicroStudyEmail({ to: profile.email, ...buildFarewellMail(name) });
+            const delivered = await sendMicroStudyEmail({
+              to: profile.email,
+              ...buildFarewellMail(name),
+            });
+            if (!delivered) {
+              failed += 1;
+              continue;
+            }
             await supabase
               .from("profiles")
               .update({
@@ -57,14 +65,23 @@ export const Route = createFileRoute("/api/public/hooks/streak-emails")({
             continue;
           }
 
+          let delivered = false;
           if (inactive >= 3) {
-            await sendMicroStudyEmail({ to: profile.email, ...buildInactiveMail(name, inactive) });
+            delivered = await sendMicroStudyEmail({
+              to: profile.email,
+              ...buildInactiveMail(name, inactive),
+            });
           } else if (inactive >= 1 && profile.streak > 0) {
-            await sendMicroStudyEmail({
+            delivered = await sendMicroStudyEmail({
               to: profile.email,
               ...buildStreakMail(name, profile.streak),
             });
           } else {
+            continue;
+          }
+
+          if (!delivered) {
+            failed += 1;
             continue;
           }
 
@@ -75,7 +92,8 @@ export const Route = createFileRoute("/api/public/hooks/streak-emails")({
           sent += 1;
         }
 
-        return Response.json({ ok: true, sent });
+        return Response.json({ ok: true, sent, failed });
+
       },
     },
   },
