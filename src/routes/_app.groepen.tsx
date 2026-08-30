@@ -188,7 +188,7 @@ function GroupsPage() {
                   <span className="text-[16px] font-medium">
                     {member.display_name ?? "Student"}
                     {member.id === user?.id && (
-                      <span className="ml-2 text-[13px] text-muted-foreground">jij</span>
+                      <span className="ml-2 text-[13px] text-muted-foreground">(jij)</span>
                     )}
                   </span>
                   <span className="ml-auto text-[14px] font-semibold text-streak">
