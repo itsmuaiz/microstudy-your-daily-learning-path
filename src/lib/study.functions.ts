@@ -1,0 +1,156 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { askJson } from "./ai.server";
+
+export const generateLearningPath = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        title: z.string().min(1).max(120),
+        sourceText: z.string().min(40).max(30000),
+        days: z.number().int().min(1).max(30),
+        examDate: z.string().nullable().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const outline = await askJson<{ steps: { title: string; summary: string }[] }>(
+      "Je bent een Nederlandse studiecoach. Je verdeelt studiestof in opeenvolgende dagelijkse leerstappen. Antwoord uitsluitend met JSON: {\"steps\":[{\"title\":string,\"summary\":string}]}. De titel is kort (max 6 woorden), de summary beschrijft in 1-2 zinnen precies wat die dag geleerd wordt.",
+      `Verdeel deze studiestof in exact ${data.days} leerstappen (1 per dag), oplopend in moeilijkheid en zonder overlap.\n\nTitel: ${data.title}\n\nSTOF:\n${data.sourceText}`,
+    );
+
+    const steps = (outline.steps ?? []).slice(0, data.days);
+    if (steps.length === 0) throw new Error("Kon geen leerpad genereren uit deze stof.");
+
+    const { data: path, error: pathError } = await context.supabase
+      .from("study_paths")
+      .insert({
+        user_id: context.userId,
+        title: data.title,
+        source_text: data.sourceText,
+        days: steps.length,
+        exam_date: data.examDate ?? null,
+      })
+      .select()
+      .single();
+    if (pathError || !path) throw new Error(pathError?.message ?? "Kon leerpad niet opslaan.");
+
+    const today = new Date();
+    const rows = steps.map((step, index) => {
+      const unlock = new Date(today);
+      unlock.setDate(today.getDate() + index);
+      return {
+        path_id: path.id,
+        user_id: context.userId,
+        day_index: index + 1,
+        title: step.title?.slice(0, 120) || `Dag ${index + 1}`,
+        summary: step.summary?.slice(0, 400) ?? null,
+        unlock_date: unlock.toISOString().slice(0, 10),
+      };
+    });
+
+    const { error: stepsError } = await context.supabase.from("path_steps").insert(rows);
+    if (stepsError) throw new Error(stepsError.message);
+
+    return { pathId: path.id as string, steps: rows.length };
+  });
+
+export const generateStepQuestions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ stepId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { data: existing } = await context.supabase
+      .from("step_questions")
+      .select("id")
+      .eq("step_id", data.stepId)
+      .limit(1);
+    if (existing && existing.length > 0) return { created: 0 };
+
+    const { data: step, error: stepError } = await context.supabase
+      .from("path_steps")
+      .select("id, title, summary, day_index, path_id, study_paths(source_text, title)")
+      .eq("id", data.stepId)
+      .single();
+    if (stepError || !step) throw new Error("Stap niet gevonden.");
+
+    const source = (step.study_paths as { source_text: string } | null)?.source_text ?? "";
+
+    const result = await askJson<{
+      questions: { prompt: string; options: string[]; correct_index: number; explanation: string }[];
+    }>(
+      "Je maakt Nederlandse meerkeuzevragen over studiestof. Antwoord uitsluitend met JSON: {\"questions\":[{\"prompt\":string,\"options\":[string,string,string,string],\"correct_index\":number,\"explanation\":string}]}. Precies 4 opties per vraag, exact 1 juist antwoord, uitleg in 1 zin.",
+      `Maak 6 nieuwe vragen over uitsluitend dit onderdeel van de stof.\n\nOnderdeel (dag ${step.day_index}): ${step.title}\n${step.summary ?? ""}\n\nVOLLEDIGE STOF:\n${source.slice(0, 12000)}`,
+    );
+
+    const questions = (result.questions ?? [])
+      .filter((q) => Array.isArray(q.options) && q.options.length >= 2)
+      .slice(0, 8)
+      .map((q, index) => ({
+        step_id: data.stepId,
+        user_id: context.userId,
+        position: index,
+        prompt: q.prompt,
+        options: q.options,
+        correct_index: Math.max(0, Math.min(q.options.length - 1, q.correct_index ?? 0)),
+        explanation: q.explanation ?? null,
+      }));
+
+    if (questions.length === 0) throw new Error("Kon geen vragen genereren.");
+
+    const { error } = await context.supabase.from("step_questions").insert(questions);
+    if (error) throw new Error(error.message);
+    return { created: questions.length };
+  });
+
+export const completeStep = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ stepId: z.string().uuid(), correct: z.number().int().min(0).max(20) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const xp = data.correct * 10;
+
+    const { data: step } = await context.supabase
+      .from("path_steps")
+      .select("id, completed_at")
+      .eq("id", data.stepId)
+      .single();
+    if (!step) throw new Error("Stap niet gevonden.");
+
+    if (!step.completed_at) {
+      await context.supabase
+        .from("path_steps")
+        .update({ completed_at: new Date().toISOString(), xp_awarded: xp })
+        .eq("id", data.stepId);
+    }
+
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("xp, streak, last_active_date")
+      .eq("id", context.userId)
+      .single();
+
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    let streak = profile?.streak ?? 0;
+    if (profile?.last_active_date === today) {
+      // streak already counted today
+    } else if (profile?.last_active_date === yesterday) {
+      streak += 1;
+    } else {
+      streak = 1;
+    }
+
+    await context.supabase
+      .from("profiles")
+      .update({
+        xp: (profile?.xp ?? 0) + (step.completed_at ? 0 : xp),
+        streak,
+        last_active_date: today,
+      })
+      .eq("id", context.userId);
+
+    return { xp: step.completed_at ? 0 : xp, streak };
+  });
