@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.join_group_by_code(text) FROM anon;
