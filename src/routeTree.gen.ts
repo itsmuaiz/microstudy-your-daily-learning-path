@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as InloggenRouteImport } from './routes/inloggen'
 import { Route as AppGroepenRouteImport } from './routes/_app.groepen'
+import { Route as AppWelkomRouteImport } from './routes/_app.welkom'
 import { Route as AppLeerpadIndexRouteImport } from './routes/_app.leerpad.index'
 import { Route as AppLeerpadPathIdRouteImport } from './routes/_app.leerpad.$pathId'
 
@@ -35,6 +36,11 @@ const AppGroepenRoute = AppGroepenRouteImport.update({
   path: '/groepen',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWelkomRoute = AppWelkomRouteImport.update({
+  id: '/welkom',
+  path: '/welkom',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppLeerpadIndexRoute = AppLeerpadIndexRouteImport.update({
   id: '/leerpad/',
   path: '/leerpad/',
@@ -50,6 +56,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/inloggen': typeof InloggenRoute
   '/groepen': typeof AppGroepenRoute
+  '/welkom': typeof AppWelkomRoute
   '/leerpad/$pathId': typeof AppLeerpadPathIdRoute
   '/leerpad/': typeof AppLeerpadIndexRoute
 }
@@ -57,6 +64,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/inloggen': typeof InloggenRoute
   '/groepen': typeof AppGroepenRoute
+  '/welkom': typeof AppWelkomRoute
   '/leerpad/$pathId': typeof AppLeerpadPathIdRoute
   '/leerpad': typeof AppLeerpadIndexRoute
 }
@@ -66,20 +74,29 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/inloggen': typeof InloggenRoute
   '/_app/groepen': typeof AppGroepenRoute
+  '/_app/welkom': typeof AppWelkomRoute
   '/_app/leerpad/$pathId': typeof AppLeerpadPathIdRoute
   '/_app/leerpad/': typeof AppLeerpadIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/inloggen' | '/groepen' | '/leerpad/$pathId' | '/leerpad/'
+  fullPaths:
+    | '/'
+    | '/inloggen'
+    | '/groepen'
+    | '/welkom'
+    | '/leerpad/$pathId'
+    | '/leerpad/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/inloggen' | '/groepen' | '/leerpad/$pathId' | '/leerpad'
+  to:
+    '/' | '/inloggen' | '/groepen' | '/welkom' | '/leerpad/$pathId' | '/leerpad'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/inloggen'
     | '/_app/groepen'
+    | '/_app/welkom'
     | '/_app/leerpad/$pathId'
     | '/_app/leerpad/'
   fileRoutesById: FileRoutesById
@@ -120,6 +137,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGroepenRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/welkom': {
+      id: '/_app/welkom'
+      path: '/welkom'
+      fullPath: '/welkom'
+      preLoaderRoute: typeof AppWelkomRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/leerpad/': {
       id: '/_app/leerpad/'
       path: '/leerpad'
@@ -139,12 +163,14 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppGroepenRoute: typeof AppGroepenRoute
+  AppWelkomRoute: typeof AppWelkomRoute
   AppLeerpadPathIdRoute: typeof AppLeerpadPathIdRoute
   AppLeerpadIndexRoute: typeof AppLeerpadIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppGroepenRoute: AppGroepenRoute,
+  AppWelkomRoute: AppWelkomRoute,
   AppLeerpadPathIdRoute: AppLeerpadPathIdRoute,
   AppLeerpadIndexRoute: AppLeerpadIndexRoute,
 }
