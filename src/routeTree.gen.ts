@@ -13,9 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as InloggenRouteImport } from './routes/inloggen'
 import { Route as AppGroepenRouteImport } from './routes/_app.groepen'
+import { Route as AppWelkomRouteImport } from './routes/_app.welkom'
 import { Route as AppLeerpadIndexRouteImport } from './routes/_app.leerpad.index'
 import { Route as AppLeerpadPathIdRouteImport } from './routes/_app.leerpad.$pathId'
-import { Route as ApiPublicHooksStreakEmailsRouteImport } from './routes/api/public/hooks/streak-emails'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -36,6 +36,11 @@ const AppGroepenRoute = AppGroepenRouteImport.update({
   path: '/groepen',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWelkomRoute = AppWelkomRouteImport.update({
+  id: '/welkom',
+  path: '/welkom',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppLeerpadIndexRoute = AppLeerpadIndexRouteImport.update({
   id: '/leerpad/',
   path: '/leerpad/',
@@ -46,28 +51,22 @@ const AppLeerpadPathIdRoute = AppLeerpadPathIdRouteImport.update({
   path: '/leerpad/$pathId',
   getParentRoute: () => AppRoute,
 } as any)
-const ApiPublicHooksStreakEmailsRoute =
-  ApiPublicHooksStreakEmailsRouteImport.update({
-    id: '/api/public/hooks/streak-emails',
-    path: '/api/public/hooks/streak-emails',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/inloggen': typeof InloggenRoute
   '/groepen': typeof AppGroepenRoute
+  '/welkom': typeof AppWelkomRoute
   '/leerpad/$pathId': typeof AppLeerpadPathIdRoute
   '/leerpad/': typeof AppLeerpadIndexRoute
-  '/api/public/hooks/streak-emails': typeof ApiPublicHooksStreakEmailsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/inloggen': typeof InloggenRoute
   '/groepen': typeof AppGroepenRoute
+  '/welkom': typeof AppWelkomRoute
   '/leerpad/$pathId': typeof AppLeerpadPathIdRoute
   '/leerpad': typeof AppLeerpadIndexRoute
-  '/api/public/hooks/streak-emails': typeof ApiPublicHooksStreakEmailsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -75,9 +74,9 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/inloggen': typeof InloggenRoute
   '/_app/groepen': typeof AppGroepenRoute
+  '/_app/welkom': typeof AppWelkomRoute
   '/_app/leerpad/$pathId': typeof AppLeerpadPathIdRoute
   '/_app/leerpad/': typeof AppLeerpadIndexRoute
-  '/api/public/hooks/streak-emails': typeof ApiPublicHooksStreakEmailsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -85,33 +84,27 @@ export interface FileRouteTypes {
     | '/'
     | '/inloggen'
     | '/groepen'
+    | '/welkom'
     | '/leerpad/$pathId'
     | '/leerpad/'
-    | '/api/public/hooks/streak-emails'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
-    | '/inloggen'
-    | '/groepen'
-    | '/leerpad/$pathId'
-    | '/leerpad'
-    | '/api/public/hooks/streak-emails'
+    '/' | '/inloggen' | '/groepen' | '/welkom' | '/leerpad/$pathId' | '/leerpad'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/inloggen'
     | '/_app/groepen'
+    | '/_app/welkom'
     | '/_app/leerpad/$pathId'
     | '/_app/leerpad/'
-    | '/api/public/hooks/streak-emails'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   InloggenRoute: typeof InloggenRoute
-  ApiPublicHooksStreakEmailsRoute: typeof ApiPublicHooksStreakEmailsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -144,6 +137,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGroepenRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/welkom': {
+      id: '/_app/welkom'
+      path: '/welkom'
+      fullPath: '/welkom'
+      preLoaderRoute: typeof AppWelkomRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/leerpad/': {
       id: '/_app/leerpad/'
       path: '/leerpad'
@@ -158,24 +158,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLeerpadPathIdRouteImport
       parentRoute: typeof AppRoute
     }
-    '/api/public/hooks/streak-emails': {
-      id: '/api/public/hooks/streak-emails'
-      path: '/api/public/hooks/streak-emails'
-      fullPath: '/api/public/hooks/streak-emails'
-      preLoaderRoute: typeof ApiPublicHooksStreakEmailsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 interface AppRouteChildren {
   AppGroepenRoute: typeof AppGroepenRoute
+  AppWelkomRoute: typeof AppWelkomRoute
   AppLeerpadPathIdRoute: typeof AppLeerpadPathIdRoute
   AppLeerpadIndexRoute: typeof AppLeerpadIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppGroepenRoute: AppGroepenRoute,
+  AppWelkomRoute: AppWelkomRoute,
   AppLeerpadPathIdRoute: AppLeerpadPathIdRoute,
   AppLeerpadIndexRoute: AppLeerpadIndexRoute,
 }
@@ -186,7 +181,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   InloggenRoute: InloggenRoute,
-  ApiPublicHooksStreakEmailsRoute: ApiPublicHooksStreakEmailsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

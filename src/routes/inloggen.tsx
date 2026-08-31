@@ -60,7 +60,7 @@ function AuthPage() {
         if (error) throw error;
         if (data.session) {
           toast.success("Account aangemaakt. Veel succes!");
-          navigate({ to: "/leerpad" });
+          navigate({ to: "/welkom" });
         } else {
           toast.success("Bijna klaar: bevestig je e-mailadres via de link in je mail.");
           setMode("login");
