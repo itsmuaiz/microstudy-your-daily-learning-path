@@ -121,6 +121,7 @@ export type Database = {
           last_active_date: string | null
           last_email_at: string | null
           notifications_enabled: boolean
+          onboarded_at: string | null
           streak: number
           xp: number
         }
@@ -133,6 +134,7 @@ export type Database = {
           last_active_date?: string | null
           last_email_at?: string | null
           notifications_enabled?: boolean
+          onboarded_at?: string | null
           streak?: number
           xp?: number
         }
@@ -145,6 +147,7 @@ export type Database = {
           last_active_date?: string | null
           last_email_at?: string | null
           notifications_enabled?: boolean
+          onboarded_at?: string | null
           streak?: number
           xp?: number
         }
