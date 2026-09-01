@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as InloggenRouteImport } from './routes/inloggen'
+import { Route as WachtwoordHerstellenRouteImport } from './routes/wachtwoord-herstellen'
 import { Route as AppGroepenRouteImport } from './routes/_app.groepen'
 import { Route as AppWelkomRouteImport } from './routes/_app.welkom'
 import { Route as AppLeerpadIndexRouteImport } from './routes/_app.leerpad.index'
@@ -29,6 +30,11 @@ const AppRoute = AppRouteImport.update({
 const InloggenRoute = InloggenRouteImport.update({
   id: '/inloggen',
   path: '/inloggen',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WachtwoordHerstellenRoute = WachtwoordHerstellenRouteImport.update({
+  id: '/wachtwoord-herstellen',
+  path: '/wachtwoord-herstellen',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppGroepenRoute = AppGroepenRouteImport.update({
@@ -55,6 +61,7 @@ const AppLeerpadPathIdRoute = AppLeerpadPathIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/inloggen': typeof InloggenRoute
+  '/wachtwoord-herstellen': typeof WachtwoordHerstellenRoute
   '/groepen': typeof AppGroepenRoute
   '/welkom': typeof AppWelkomRoute
   '/leerpad/$pathId': typeof AppLeerpadPathIdRoute
@@ -63,6 +70,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/inloggen': typeof InloggenRoute
+  '/wachtwoord-herstellen': typeof WachtwoordHerstellenRoute
   '/groepen': typeof AppGroepenRoute
   '/welkom': typeof AppWelkomRoute
   '/leerpad/$pathId': typeof AppLeerpadPathIdRoute
@@ -73,6 +81,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/inloggen': typeof InloggenRoute
+  '/wachtwoord-herstellen': typeof WachtwoordHerstellenRoute
   '/_app/groepen': typeof AppGroepenRoute
   '/_app/welkom': typeof AppWelkomRoute
   '/_app/leerpad/$pathId': typeof AppLeerpadPathIdRoute
@@ -83,18 +92,26 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/inloggen'
+    | '/wachtwoord-herstellen'
     | '/groepen'
     | '/welkom'
     | '/leerpad/$pathId'
     | '/leerpad/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/inloggen' | '/groepen' | '/welkom' | '/leerpad/$pathId' | '/leerpad'
+    | '/'
+    | '/inloggen'
+    | '/wachtwoord-herstellen'
+    | '/groepen'
+    | '/welkom'
+    | '/leerpad/$pathId'
+    | '/leerpad'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/inloggen'
+    | '/wachtwoord-herstellen'
     | '/_app/groepen'
     | '/_app/welkom'
     | '/_app/leerpad/$pathId'
@@ -105,6 +122,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   InloggenRoute: typeof InloggenRoute
+  WachtwoordHerstellenRoute: typeof WachtwoordHerstellenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -128,6 +146,13 @@ declare module '@tanstack/react-router' {
       path: '/inloggen'
       fullPath: '/inloggen'
       preLoaderRoute: typeof InloggenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wachtwoord-herstellen': {
+      id: '/wachtwoord-herstellen'
+      path: '/wachtwoord-herstellen'
+      fullPath: '/wachtwoord-herstellen'
+      preLoaderRoute: typeof WachtwoordHerstellenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/groepen': {
@@ -181,6 +206,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   InloggenRoute: InloggenRoute,
+  WachtwoordHerstellenRoute: WachtwoordHerstellenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
