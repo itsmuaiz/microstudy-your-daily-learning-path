@@ -70,6 +70,20 @@ function LeerpadOverzicht() {
       toast.error(error instanceof Error ? error.message : "Kon leerpad niet maken"),
   });
 
+  const remove = useMutation({
+    mutationFn: async (pathId: string) => {
+      const { error } = await supabase.from("study_paths").delete().eq("id", pathId);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      setConfirmDelete(null);
+      toast.success("Leerpad verwijderd");
+      await queryClient.invalidateQueries({ queryKey: ["paths"] });
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Kon leerpad niet verwijderen"),
+  });
+
   const words = sourceText.trim() ? sourceText.trim().split(/\s+/).length : 0;
   const perDay = days > 0 ? Math.ceil(words / days) : 0;
 
