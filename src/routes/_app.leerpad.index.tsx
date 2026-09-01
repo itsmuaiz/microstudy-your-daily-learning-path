@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
-import { ArrowRight, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, Sparkles, Trash2, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Pressable } from "@/components/Pressable";
@@ -42,6 +42,7 @@ function LeerpadOverzicht() {
   const [sourceText, setSourceText] = useState("");
   const [days, setDays] = useState(5);
   const [reading, setReading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const paths = useQuery({
     queryKey: ["paths", user?.id],
