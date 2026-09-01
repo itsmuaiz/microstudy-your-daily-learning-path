@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Pressable } from "@/components/Pressable";
 import { pick, springCalm } from "@/lib/motion";
 import { generateLearningPath } from "@/lib/study.functions";
+import { extractFileText } from "@/lib/extract.functions";
 
 export const Route = createFileRoute("/_app/leerpad/")({
   head: () => ({
@@ -35,10 +36,12 @@ function LeerpadOverzicht() {
   const queryClient = useQueryClient();
   const reduced = useReducedMotion();
   const generate = useServerFn(generateLearningPath);
+  const extract = useServerFn(extractFileText);
 
   const [title, setTitle] = useState("");
   const [sourceText, setSourceText] = useState("");
   const [days, setDays] = useState(5);
+  const [reading, setReading] = useState(false);
 
   const paths = useQuery({
     queryKey: ["paths", user?.id],
@@ -106,29 +109,62 @@ function LeerpadOverzicht() {
               <label htmlFor="stof" className="block text-[13px] font-semibold">
                 Studiestof (upload een bestand of plak je samenvatting)
               </label>
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-[13px] font-semibold">
+              <label
+                className={`inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-[13px] font-semibold ${
+                  reading ? "cursor-wait opacity-60" : "cursor-pointer"
+                }`}
+              >
                 <Upload className="size-3.5" aria-hidden />
-                Bestand uploaden
+                {reading ? "Bestand wordt uitgelezen…" : "Bestand uploaden"}
                 <input
                   type="file"
-                  accept=".txt,.md,.csv,.json,text/plain"
+                  accept=".txt,.md,.csv,.json,.pdf,.docx,.png,.jpg,.jpeg,.webp,text/plain,application/pdf,image/*"
+                  disabled={reading}
                   className="sr-only"
                   onChange={async (event) => {
                     const file = event.target.files?.[0];
                     event.target.value = "";
                     if (!file) return;
-                    if (file.size > 2_000_000) {
-                      toast.error("Bestand is te groot (max 2 MB).");
+                    if (file.size > 10_000_000) {
+                      toast.error("Bestand is te groot (max 10 MB).");
                       return;
                     }
-                    const text = await file.text();
-                    if (!text.trim()) {
-                      toast.error("Dit bestand bevat geen leesbare tekst.");
-                      return;
+                    const name = file.name.toLowerCase();
+                    const isPlain =
+                      /\.(txt|md|csv|json)$/.test(name) || file.type.startsWith("text/");
+                    try {
+                      setReading(true);
+                      let text = "";
+                      if (isPlain) {
+                        text = await file.text();
+                      } else {
+                        const buffer = new Uint8Array(await file.arrayBuffer());
+                        let binary = "";
+                        for (let i = 0; i < buffer.length; i += 1)
+                          binary += String.fromCharCode(buffer[i]!);
+                        const result = await extract({
+                          data: {
+                            filename: file.name,
+                            mimeType: file.type || "application/octet-stream",
+                            base64: btoa(binary),
+                          },
+                        });
+                        text = result.text;
+                      }
+                      if (!text.trim()) {
+                        toast.error("Dit bestand bevat geen leesbare tekst.");
+                        return;
+                      }
+                      setSourceText((current) => (current ? `${current}\n\n${text}` : text));
+                      if (!title.trim()) setTitle(file.name.replace(/\.[^.]+$/, ""));
+                      toast.success(`${file.name} toegevoegd`);
+                    } catch (error) {
+                      toast.error(
+                        error instanceof Error ? error.message : "Bestand uitlezen mislukte",
+                      );
+                    } finally {
+                      setReading(false);
                     }
-                    setSourceText((current) => (current ? `${current}\n\n${text}` : text));
-                    if (!title.trim()) setTitle(file.name.replace(/\.[^.]+$/, ""));
-                    toast.success(`${file.name} toegevoegd`);
                   }}
                 />
               </label>
@@ -142,8 +178,10 @@ function LeerpadOverzicht() {
               className={`${inputClass} resize-y leading-relaxed`}
             />
             <p className="mt-1.5 text-[13px] text-muted-foreground">
-              {words} woorden · tekstbestanden (.txt, .md) worden direct ingelezen
+              {words} woorden · ondersteund: PDF, Word (.docx), foto's (JPG, PNG, WEBP) en tekst
+              (.txt, .md) · max 10 MB. Tekst uit PDF's en foto's wordt automatisch herkend.
             </p>
+
           </div>
           <div>
             <label htmlFor="dagen" className="mb-1.5 block text-[13px] font-semibold">
