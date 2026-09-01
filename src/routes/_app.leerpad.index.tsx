@@ -224,35 +224,85 @@ function LeerpadOverzicht() {
             const steps = path.path_steps ?? [];
             const done = steps.filter((s) => s.completed_at).length;
             const pct = steps.length ? (done / steps.length) * 100 : 0;
+            const confirming = confirmDelete === path.id;
             return (
-              <Link
-                key={path.id}
-                to="/leerpad/$pathId"
-                params={{ pathId: path.id }}
-                className="group rounded-3xl border border-border bg-card p-6 transition-shadow hover:shadow-[0_16px_40px_-24px_oklch(0.2_0.03_260/0.35)]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-lg font-semibold">{path.title}</h3>
-                  <ArrowRight
-                    className="mt-1 size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5"
-                    aria-hidden
-                  />
-                </div>
-                <p className="mt-1 text-[14px] text-muted-foreground">
-                  {done} van {steps.length} stappen afgerond
-                </p>
-                <div className="mt-4 h-2 overflow-hidden rounded-full bg-secondary">
-                  <motion.div
-                    className="h-full rounded-full bg-primary"
-                    initial={false}
-                    animate={{ width: `${pct}%` }}
-                    transition={pick(reduced, springCalm)}
-                  />
-                </div>
-              </Link>
+              <div key={path.id} className="relative">
+                <Link
+                  to="/leerpad/$pathId"
+                  params={{ pathId: path.id }}
+                  className="group block rounded-3xl border border-border bg-card p-6 transition-shadow hover:shadow-[0_16px_40px_-24px_oklch(0.2_0.03_260/0.35)]"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-lg font-semibold">{path.title}</h3>
+                    <ArrowRight
+                      className="mt-1 size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                      aria-hidden
+                    />
+                  </div>
+                  <p className="mt-1 text-[14px] text-muted-foreground">
+                    {done} van {steps.length} stappen afgerond
+                  </p>
+                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-secondary">
+                    <motion.div
+                      className="h-full rounded-full bg-primary"
+                      initial={false}
+                      animate={{ width: `${pct}%` }}
+                      transition={pick(reduced, springCalm)}
+                    />
+                  </div>
+                </Link>
+
+                <Pressable
+                  aria-label={`Leerpad ${path.title} verwijderen`}
+                  onClick={() => setConfirmDelete(path.id)}
+                  className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-[13px] font-semibold text-muted-foreground"
+                >
+                  <Trash2 className="size-3.5" aria-hidden />
+                  Verwijderen
+                </Pressable>
+
+                <AnimatePresence>
+                  {confirming && (
+                    <motion.div
+                      initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.97 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.97 }}
+                      transition={pick(reduced, springCalm)}
+                      className="absolute inset-0 flex flex-col justify-center gap-3 rounded-3xl border border-border bg-card/85 p-6 backdrop-blur-xl"
+                      role="dialog"
+                      aria-label="Leerpad verwijderen"
+                    >
+                      <div>
+                        <p className="text-[15px] font-semibold">Dit leerpad verwijderen?</p>
+                        <p className="mt-1 text-[13px] text-muted-foreground">
+                          “{path.title}” en alle stappen en vragen verdwijnen definitief. Dit kan
+                          niet ongedaan worden gemaakt.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Pressable
+                          disabled={remove.isPending}
+                          onClick={() => remove.mutate(path.id)}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-destructive px-4 py-2 text-[14px] font-semibold text-destructive-foreground"
+                        >
+                          <Trash2 className="size-3.5" aria-hidden />
+                          {remove.isPending ? "Verwijderen…" : "Definitief verwijderen"}
+                        </Pressable>
+                        <Pressable
+                          onClick={() => setConfirmDelete(null)}
+                          className="rounded-xl bg-secondary px-4 py-2 text-[14px] font-semibold"
+                        >
+                          Annuleren
+                        </Pressable>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             );
           })}
         </div>
+
       </section>
     </div>
   );
