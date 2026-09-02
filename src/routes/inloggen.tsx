@@ -95,12 +95,18 @@ function AuthPage() {
           MicroStudy
         </Link>
         <h1 className="mt-5 text-3xl font-bold">
-          {mode === "login" ? "Welkom terug" : "Maak je account"}
+          {mode === "login"
+            ? "Welkom terug"
+            : mode === "register"
+              ? "Maak je account"
+              : "Wachtwoord vergeten"}
         </h1>
         <p className="mt-2 text-[15px] text-muted-foreground">
           {mode === "login"
             ? "Log in met je e-mailadres en wachtwoord."
-            : "Registreer met e-mail en wachtwoord en start je eerste leerpad."}
+            : mode === "register"
+              ? "Registreer met e-mail en wachtwoord en start je eerste leerpad."
+              : "Vul je e-mailadres in. Je ontvangt een link om een nieuw wachtwoord in te stellen."}
         </p>
 
         <form onSubmit={submit} className="mt-7 space-y-3">
@@ -133,36 +139,58 @@ function AuthPage() {
               autoComplete="email"
             />
           </div>
-          <div>
-            <label htmlFor="password" className="mb-1.5 block text-[13px] font-semibold">
-              Wachtwoord
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-            />
-          </div>
+          {mode !== "forgot" && (
+            <div>
+              <label htmlFor="password" className="mb-1.5 block text-[13px] font-semibold">
+                Wachtwoord
+              </label>
+              <input
+                id="password"
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={inputClass}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+              />
+            </div>
+          )}
           <Pressable
             type="submit"
             disabled={busy}
             className="mt-2 w-full rounded-xl bg-primary px-4 py-3 text-[16px] font-semibold text-primary-foreground"
           >
-            {busy ? "Bezig…" : mode === "login" ? "Inloggen" : "Account maken"}
+            {busy
+              ? "Bezig…"
+              : mode === "login"
+                ? "Inloggen"
+                : mode === "register"
+                  ? "Account maken"
+                  : "Stuur reset-link"}
           </Pressable>
         </form>
+
+        {mode === "login" && (
+          <button
+            type="button"
+            onClick={() => setMode("forgot")}
+            className="mt-5 block text-[15px] font-medium text-muted-foreground underline-offset-4 hover:underline"
+          >
+            Wachtwoord vergeten?
+          </button>
+        )}
 
         <button
           type="button"
           onClick={() => setMode(mode === "login" ? "register" : "login")}
-          className="mt-5 text-[15px] font-medium text-accent underline-offset-4 hover:underline"
+          className="mt-3 text-[15px] font-medium text-accent underline-offset-4 hover:underline"
         >
-          {mode === "login" ? "Nog geen account? Registreren" : "Al een account? Inloggen"}
+          {mode === "login"
+            ? "Nog geen account? Registreren"
+            : mode === "register"
+              ? "Al een account? Inloggen"
+              : "Terug naar inloggen"}
         </button>
       </motion.div>
     </div>
