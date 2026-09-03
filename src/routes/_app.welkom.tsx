@@ -126,10 +126,16 @@ function Welkom() {
   const [index, setIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [level, setLevel] = useState<string | null>(null);
+  const [goal, setGoal] = useState<string | null>(null);
+  const [minutes, setMinutes] = useState<number | null>(null);
 
   const step = steps[index]!;
   const Icon = step.icon;
   const last = index === steps.length - 1;
+  const picker = "picker" in step ? step.picker : null;
+  const stepDone =
+    picker === "level" ? !!level : picker === "goal" ? !!goal : picker === "minutes" ? !!minutes : true;
+  const firstPickerIndex = steps.findIndex((s) => "picker" in s && s.picker);
 
   async function finish() {
     setSaving(true);
@@ -139,6 +145,8 @@ function Welkom() {
         .update({
           onboarded_at: new Date().toISOString(),
           ...(level ? { education_level: level } : {}),
+          ...(goal ? { goal } : {}),
+          ...(minutes ? { daily_minutes: minutes } : {}),
         })
         .eq("id", user.id);
       await queryClient.invalidateQueries({ queryKey: ["onboarding"] });
