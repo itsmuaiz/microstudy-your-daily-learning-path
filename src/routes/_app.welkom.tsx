@@ -310,7 +310,7 @@ function Welkom() {
           {!last && (
             <Pressable
               disabled={saving}
-              onClick={() => setIndex(steps.length - 1)}
+              onClick={() => setIndex(firstPickerIndex)}
               className="rounded-xl px-4 py-3 text-[15px] font-semibold text-muted-foreground"
             >
               Uitleg overslaan
