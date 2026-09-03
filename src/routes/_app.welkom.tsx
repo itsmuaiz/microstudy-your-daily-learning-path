@@ -185,7 +185,7 @@ function Welkom() {
             <h2 className="mt-5 text-2xl font-semibold tracking-[-0.01em]">{step.title}</h2>
             <p className="mt-2 text-[16px] leading-relaxed text-muted-foreground">{step.body}</p>
 
-            {"picker" in step && step.picker && (
+            {picker === "level" && (
               <div className="mt-6 space-y-5">
                 {levelGroups.map((group) => (
                   <div key={group.label}>
@@ -213,6 +213,59 @@ function Welkom() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {picker === "goal" && (
+              <div className="mt-6 flex flex-col gap-2">
+                {goalOptions.map((option) => {
+                  const active = goal === option;
+                  return (
+                    <Pressable
+                      key={option}
+                      scale={0.99}
+                      onClick={() => setGoal(option)}
+                      className={`rounded-2xl border px-4 py-3 text-left text-[15px] font-semibold transition-colors ${
+                        active
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-secondary text-foreground"
+                      }`}
+                    >
+                      {option}
+                    </Pressable>
+                  );
+                })}
+              </div>
+            )}
+
+            {picker === "minutes" && (
+              <div className="mt-6 flex flex-wrap gap-2">
+                {minuteOptions.map((option) => {
+                  const active = minutes === option.value;
+                  return (
+                    <Pressable
+                      key={option.value}
+                      scale={0.98}
+                      onClick={() => setMinutes(option.value)}
+                      className={`min-w-[104px] rounded-2xl border px-4 py-3 text-left transition-colors ${
+                        active
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-secondary text-foreground"
+                      }`}
+                    >
+                      <span className="block text-[16px] font-bold tracking-[-0.01em]">
+                        {option.label}
+                      </span>
+                      <span
+                        className={`block text-[13px] font-medium ${
+                          active ? "text-primary-foreground/80" : "text-muted-foreground"
+                        }`}
+                      >
+                        {option.hint}
+                      </span>
+                    </Pressable>
+                  );
+                })}
               </div>
             )}
           </motion.div>
