@@ -115,6 +115,7 @@ export type Database = {
         Row: {
           created_at: string
           display_name: string | null
+          education_level: string | null
           email: string | null
           farewell_sent: boolean
           id: string
@@ -128,6 +129,7 @@ export type Database = {
         Insert: {
           created_at?: string
           display_name?: string | null
+          education_level?: string | null
           email?: string | null
           farewell_sent?: boolean
           id: string
@@ -141,6 +143,7 @@ export type Database = {
         Update: {
           created_at?: string
           display_name?: string | null
+          education_level?: string | null
           email?: string | null
           farewell_sent?: boolean
           id?: string
