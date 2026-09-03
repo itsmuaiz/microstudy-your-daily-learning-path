@@ -290,10 +290,14 @@ function Welkom() {
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-[16px] font-semibold text-primary-foreground"
           >
             {last
-              ? level
+              ? stepDone
                 ? "Mijn eerste leerset toevoegen"
-                : "Kies je niveau"
-              : "Verder"}
+                : "Kies hoeveel je per dag wilt leren"
+              : picker === "level" && !level
+                ? "Kies je niveau"
+                : picker === "goal" && !goal
+                  ? "Kies je doel"
+                  : "Verder"}
           </Pressable>
           {index > 0 && (
             <Pressable
