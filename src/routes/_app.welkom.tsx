@@ -207,10 +207,10 @@ function Welkom() {
           {!last && (
             <Pressable
               disabled={saving}
-              onClick={() => void finish()}
+              onClick={() => setIndex(steps.length - 1)}
               className="rounded-xl px-4 py-3 text-[15px] font-semibold text-muted-foreground"
             >
-              Overslaan
+              Uitleg overslaan
             </Pressable>
           )}
         </div>
