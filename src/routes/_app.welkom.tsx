@@ -2,7 +2,16 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, Flame, GraduationCap, Sparkles, Upload, Users } from "lucide-react";
+import {
+  CalendarClock,
+  Flame,
+  GraduationCap,
+  Sparkles,
+  Target,
+  Timer,
+  Upload,
+  Users,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Pressable } from "@/components/Pressable";
@@ -76,8 +85,37 @@ const steps = [
     icon: GraduationCap,
     title: "Op welk niveau leer je?",
     body: "MicroStudy gebruikt dit als standaard voor de taal en diepgang van je vragen. Je kunt het later altijd aanpassen.",
-    picker: true as const,
+    picker: "level" as const,
   },
+  {
+    icon: Target,
+    title: "Wat wil je bereiken met MicroStudy?",
+    body: "Zo weet MicroStudy waar je vragen en tempo op gericht moeten zijn.",
+    picker: "goal" as const,
+  },
+  {
+    icon: Timer,
+    title: "Hoeveel wil je per dag leren?",
+    body: "MicroStudy verdeelt je stof zo dat een dagelijkse stap ongeveer deze tijd kost.",
+    picker: "minutes" as const,
+  },
+];
+
+const goalOptions = [
+  "Hogere cijfers halen",
+  "Een toets of examen halen",
+  "Minder stress voor toetsen",
+  "Niet meer stampen op het laatste moment",
+  "Vaste studieroutine opbouwen",
+  "Stof beter onthouden op lange termijn",
+];
+
+const minuteOptions = [
+  { value: 5, label: "5 min", hint: "Heel kort" },
+  { value: 10, label: "10 min", hint: "Licht" },
+  { value: 15, label: "15 min", hint: "Aangeraden" },
+  { value: 25, label: "25 min", hint: "Stevig" },
+  { value: 40, label: "40 min", hint: "Intensief" },
 ];
 
 function Welkom() {
@@ -88,10 +126,16 @@ function Welkom() {
   const [index, setIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [level, setLevel] = useState<string | null>(null);
+  const [goal, setGoal] = useState<string | null>(null);
+  const [minutes, setMinutes] = useState<number | null>(null);
 
   const step = steps[index]!;
   const Icon = step.icon;
   const last = index === steps.length - 1;
+  const picker = "picker" in step ? step.picker : null;
+  const stepDone =
+    picker === "level" ? !!level : picker === "goal" ? !!goal : picker === "minutes" ? !!minutes : true;
+  const firstPickerIndex = steps.findIndex((s) => "picker" in s && s.picker);
 
   async function finish() {
     setSaving(true);
@@ -101,6 +145,8 @@ function Welkom() {
         .update({
           onboarded_at: new Date().toISOString(),
           ...(level ? { education_level: level } : {}),
+          ...(goal ? { goal } : {}),
+          ...(minutes ? { daily_minutes: minutes } : {}),
         })
         .eq("id", user.id);
       await queryClient.invalidateQueries({ queryKey: ["onboarding"] });
@@ -139,7 +185,7 @@ function Welkom() {
             <h2 className="mt-5 text-2xl font-semibold tracking-[-0.01em]">{step.title}</h2>
             <p className="mt-2 text-[16px] leading-relaxed text-muted-foreground">{step.body}</p>
 
-            {"picker" in step && step.picker && (
+            {picker === "level" && (
               <div className="mt-6 space-y-5">
                 {levelGroups.map((group) => (
                   <div key={group.label}>
@@ -169,6 +215,59 @@ function Welkom() {
                 ))}
               </div>
             )}
+
+            {picker === "goal" && (
+              <div className="mt-6 flex flex-col gap-2">
+                {goalOptions.map((option) => {
+                  const active = goal === option;
+                  return (
+                    <Pressable
+                      key={option}
+                      scale={0.99}
+                      onClick={() => setGoal(option)}
+                      className={`rounded-2xl border px-4 py-3 text-left text-[15px] font-semibold transition-colors ${
+                        active
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-secondary text-foreground"
+                      }`}
+                    >
+                      {option}
+                    </Pressable>
+                  );
+                })}
+              </div>
+            )}
+
+            {picker === "minutes" && (
+              <div className="mt-6 flex flex-wrap gap-2">
+                {minuteOptions.map((option) => {
+                  const active = minutes === option.value;
+                  return (
+                    <Pressable
+                      key={option.value}
+                      scale={0.98}
+                      onClick={() => setMinutes(option.value)}
+                      className={`min-w-[104px] rounded-2xl border px-4 py-3 text-left transition-colors ${
+                        active
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-secondary text-foreground"
+                      }`}
+                    >
+                      <span className="block text-[16px] font-bold tracking-[-0.01em]">
+                        {option.label}
+                      </span>
+                      <span
+                        className={`block text-[13px] font-medium ${
+                          active ? "text-primary-foreground/80" : "text-muted-foreground"
+                        }`}
+                      >
+                        {option.hint}
+                      </span>
+                    </Pressable>
+                  );
+                })}
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
 
@@ -186,15 +285,19 @@ function Welkom() {
 
         <div className="mt-7 flex flex-wrap items-center gap-3">
           <Pressable
-            disabled={saving || (last && !level)}
+            disabled={saving || !stepDone}
             onClick={() => (last ? void finish() : setIndex((i) => i + 1))}
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-[16px] font-semibold text-primary-foreground"
           >
             {last
-              ? level
+              ? stepDone
                 ? "Mijn eerste leerset toevoegen"
-                : "Kies je niveau"
-              : "Verder"}
+                : "Kies hoeveel je per dag wilt leren"
+              : picker === "level" && !level
+                ? "Kies je niveau"
+                : picker === "goal" && !goal
+                  ? "Kies je doel"
+                  : "Verder"}
           </Pressable>
           {index > 0 && (
             <Pressable
@@ -204,10 +307,10 @@ function Welkom() {
               Terug
             </Pressable>
           )}
-          {!last && (
+          {index < firstPickerIndex && (
             <Pressable
               disabled={saving}
-              onClick={() => setIndex(steps.length - 1)}
+              onClick={() => setIndex(firstPickerIndex)}
               className="rounded-xl px-4 py-3 text-[15px] font-semibold text-muted-foreground"
             >
               Uitleg overslaan

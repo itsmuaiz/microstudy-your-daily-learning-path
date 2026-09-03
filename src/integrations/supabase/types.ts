@@ -114,10 +114,12 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          daily_minutes: number | null
           display_name: string | null
           education_level: string | null
           email: string | null
           farewell_sent: boolean
+          goal: string | null
           id: string
           last_active_date: string | null
           last_email_at: string | null
@@ -128,10 +130,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          daily_minutes?: number | null
           display_name?: string | null
           education_level?: string | null
           email?: string | null
           farewell_sent?: boolean
+          goal?: string | null
           id: string
           last_active_date?: string | null
           last_email_at?: string | null
@@ -142,10 +146,12 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          daily_minutes?: number | null
           display_name?: string | null
           education_level?: string | null
           email?: string | null
           farewell_sent?: boolean
+          goal?: string | null
           id?: string
           last_active_date?: string | null
           last_email_at?: string | null
