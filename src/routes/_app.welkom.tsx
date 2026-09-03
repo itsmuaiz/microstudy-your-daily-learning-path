@@ -285,7 +285,7 @@ function Welkom() {
 
         <div className="mt-7 flex flex-wrap items-center gap-3">
           <Pressable
-            disabled={saving || (last && !level)}
+            disabled={saving || !stepDone}
             onClick={() => (last ? void finish() : setIndex((i) => i + 1))}
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-[16px] font-semibold text-primary-foreground"
           >
