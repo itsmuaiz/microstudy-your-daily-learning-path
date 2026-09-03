@@ -307,7 +307,7 @@ function Welkom() {
               Terug
             </Pressable>
           )}
-          {!last && (
+          {index < firstPickerIndex && (
             <Pressable
               disabled={saving}
               onClick={() => setIndex(firstPickerIndex)}
