@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, Flame, Sparkles, Upload, Users } from "lucide-react";
+import { CalendarClock, Flame, GraduationCap, Sparkles, Upload, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Pressable } from "@/components/Pressable";
@@ -26,6 +26,25 @@ export const Route = createFileRoute("/_app/welkom")({
   }),
   component: Welkom,
 });
+
+const levelGroups = [
+  {
+    label: "Basisschool",
+    options: ["Basisschool"],
+  },
+  {
+    label: "Voortgezet onderwijs — onderbouw",
+    options: ["Onderbouw vmbo", "Onderbouw havo", "Onderbouw vwo"],
+  },
+  {
+    label: "Voortgezet onderwijs — bovenbouw",
+    options: ["Bovenbouw vmbo", "Bovenbouw havo", "Bovenbouw vwo"],
+  },
+  {
+    label: "Na het voortgezet onderwijs",
+    options: ["Mbo", "Hbo", "Universiteit"],
+  },
+];
 
 const steps = [
   {
@@ -53,6 +72,12 @@ const steps = [
     title: "Groepen (optioneel)",
     body: "Maak een groep, deel de code met klasgenoten en vergelijk je XP op het leaderboard.",
   },
+  {
+    icon: GraduationCap,
+    title: "Op welk niveau leer je?",
+    body: "MicroStudy gebruikt dit als standaard voor de taal en diepgang van je vragen. Je kunt het later altijd aanpassen.",
+    picker: true as const,
+  },
 ];
 
 function Welkom() {
@@ -62,6 +87,7 @@ function Welkom() {
   const reduced = useReducedMotion();
   const [index, setIndex] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [level, setLevel] = useState<string | null>(null);
 
   const step = steps[index]!;
   const Icon = step.icon;
@@ -72,7 +98,10 @@ function Welkom() {
     if (user) {
       await supabase
         .from("profiles")
-        .update({ onboarded_at: new Date().toISOString() })
+        .update({
+          onboarded_at: new Date().toISOString(),
+          ...(level ? { education_level: level } : {}),
+        })
         .eq("id", user.id);
       await queryClient.invalidateQueries({ queryKey: ["onboarding"] });
       await queryClient.invalidateQueries({ queryKey: ["profile"] });
@@ -109,6 +138,37 @@ function Welkom() {
             </span>
             <h2 className="mt-5 text-2xl font-semibold tracking-[-0.01em]">{step.title}</h2>
             <p className="mt-2 text-[16px] leading-relaxed text-muted-foreground">{step.body}</p>
+
+            {"picker" in step && step.picker && (
+              <div className="mt-6 space-y-5">
+                {levelGroups.map((group) => (
+                  <div key={group.label}>
+                    <p className="mb-2 text-[13px] font-semibold text-muted-foreground">
+                      {group.label}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {group.options.map((option) => {
+                        const active = level === option;
+                        return (
+                          <Pressable
+                            key={option}
+                            scale={0.98}
+                            onClick={() => setLevel(option)}
+                            className={`rounded-full border px-4 py-2 text-[14px] font-semibold transition-colors ${
+                              active
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-secondary text-foreground"
+                            }`}
+                          >
+                            {option}
+                          </Pressable>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
 
@@ -126,13 +186,17 @@ function Welkom() {
 
         <div className="mt-7 flex flex-wrap items-center gap-3">
           <Pressable
-            disabled={saving}
+            disabled={saving || (last && !level)}
             onClick={() => (last ? void finish() : setIndex((i) => i + 1))}
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-[16px] font-semibold text-primary-foreground"
           >
-            {last ? "Mijn eerste leerset toevoegen" : "Verder"}
+            {last
+              ? level
+                ? "Mijn eerste leerset toevoegen"
+                : "Kies je niveau"
+              : "Verder"}
           </Pressable>
-          {index > 0 && !last && (
+          {index > 0 && (
             <Pressable
               onClick={() => setIndex((i) => i - 1)}
               className="rounded-xl px-4 py-3 text-[15px] font-semibold text-muted-foreground"
@@ -143,10 +207,10 @@ function Welkom() {
           {!last && (
             <Pressable
               disabled={saving}
-              onClick={() => void finish()}
+              onClick={() => setIndex(steps.length - 1)}
               className="rounded-xl px-4 py-3 text-[15px] font-semibold text-muted-foreground"
             >
-              Overslaan
+              Uitleg overslaan
             </Pressable>
           )}
         </div>
