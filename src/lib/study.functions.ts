@@ -87,11 +87,21 @@ export const generateStepQuestions = createServerFn({ method: "POST" })
 
     const source = (step.study_paths as { source_text: string } | null)?.source_text ?? "";
 
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("education_level")
+      .eq("id", context.userId)
+      .maybeSingle();
+    const level = profile?.education_level ?? null;
+
     const result = await askJson<{
       questions: { prompt: string; options: string[]; correct_index: number; explanation: string }[];
     }>(
       "Je maakt Nederlandse meerkeuzevragen over studiestof. Antwoord uitsluitend met JSON: {\"questions\":[{\"prompt\":string,\"options\":[string,string,string,string],\"correct_index\":number,\"explanation\":string}]}. Precies 4 opties per vraag, exact 1 juist antwoord, uitleg in 1 zin.",
-      `Maak 6 nieuwe vragen over uitsluitend dit onderdeel van de stof.\n\nOnderdeel (dag ${step.day_index}): ${step.title}\n${step.summary ?? ""}\n\nVOLLEDIGE STOF:\n${source.slice(0, 12000)}`,
+      `Maak 6 nieuwe vragen over uitsluitend dit onderdeel van de stof.${
+        level ? `\n\nNiveau van de leerling: ${level}. Stem moeilijkheid en woordkeuze hierop af.` : ""
+      }\n\nOnderdeel (dag ${step.day_index}): ${step.title}\n${step.summary ?? ""}\n\nVOLLEDIGE STOF:\n${source.slice(0, 12000)}`,
+
     );
 
     const questions = (result.questions ?? [])
