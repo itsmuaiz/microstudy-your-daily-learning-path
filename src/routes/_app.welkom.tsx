@@ -76,8 +76,37 @@ const steps = [
     icon: GraduationCap,
     title: "Op welk niveau leer je?",
     body: "MicroStudy gebruikt dit als standaard voor de taal en diepgang van je vragen. Je kunt het later altijd aanpassen.",
-    picker: true as const,
+    picker: "level" as const,
   },
+  {
+    icon: Target,
+    title: "Wat wil je bereiken met MicroStudy?",
+    body: "Zo weet MicroStudy waar je vragen en tempo op gericht moeten zijn.",
+    picker: "goal" as const,
+  },
+  {
+    icon: Timer,
+    title: "Hoeveel wil je per dag leren?",
+    body: "MicroStudy verdeelt je stof zo dat een dagelijkse stap ongeveer deze tijd kost.",
+    picker: "minutes" as const,
+  },
+];
+
+const goalOptions = [
+  "Hogere cijfers halen",
+  "Een toets of examen halen",
+  "Minder stress voor toetsen",
+  "Niet meer stampen op het laatste moment",
+  "Vaste studieroutine opbouwen",
+  "Stof beter onthouden op lange termijn",
+];
+
+const minuteOptions = [
+  { value: 5, label: "5 min", hint: "Heel kort" },
+  { value: 10, label: "10 min", hint: "Licht" },
+  { value: 15, label: "15 min", hint: "Aangeraden" },
+  { value: 25, label: "25 min", hint: "Stevig" },
+  { value: 40, label: "40 min", hint: "Intensief" },
 ];
 
 function Welkom() {
