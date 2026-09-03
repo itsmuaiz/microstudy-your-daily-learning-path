@@ -2,7 +2,16 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, Flame, GraduationCap, Sparkles, Upload, Users } from "lucide-react";
+import {
+  CalendarClock,
+  Flame,
+  GraduationCap,
+  Sparkles,
+  Target,
+  Timer,
+  Upload,
+  Users,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Pressable } from "@/components/Pressable";
