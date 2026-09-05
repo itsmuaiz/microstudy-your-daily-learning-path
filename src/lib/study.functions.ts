@@ -12,6 +12,7 @@ export const generateLearningPath = createServerFn({ method: "POST" })
         sourceText: z.string().min(40).max(30000),
         days: z.number().int().min(1).max(30),
         examDate: z.string().nullable().optional(),
+        questionMode: z.enum(["multiple_choice", "open", "both"]).default("multiple_choice"),
       })
       .parse(data),
   )
