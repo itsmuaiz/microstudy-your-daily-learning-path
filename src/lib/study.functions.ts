@@ -12,6 +12,7 @@ export const generateLearningPath = createServerFn({ method: "POST" })
         sourceText: z.string().min(40).max(30000),
         days: z.number().int().min(1).max(30),
         examDate: z.string().nullable().optional(),
+        questionMode: z.enum(["multiple_choice", "open", "both"]).default("multiple_choice"),
       })
       .parse(data),
   )
@@ -48,6 +49,7 @@ export const generateLearningPath = createServerFn({ method: "POST" })
         source_text: data.sourceText,
         days: steps.length,
         exam_date: data.examDate ?? null,
+        question_mode: data.questionMode,
       })
       .select()
       .single();
@@ -86,12 +88,19 @@ export const generateStepQuestions = createServerFn({ method: "POST" })
 
     const { data: step, error: stepError } = await context.supabase
       .from("path_steps")
-      .select("id, title, summary, day_index, path_id, study_paths(source_text, title)")
+      .select("id, title, summary, day_index, path_id, study_paths(source_text, title, question_mode)")
       .eq("id", data.stepId)
       .single();
     if (stepError || !step) throw new Error("Stap niet gevonden.");
 
-    const source = (step.study_paths as { source_text: string } | null)?.source_text ?? "";
+    const pathInfo = step.study_paths as
+      | { source_text: string; question_mode: string | null }
+      | null;
+    const source = pathInfo?.source_text ?? "";
+    const mode = (pathInfo?.question_mode ?? "multiple_choice") as
+      | "multiple_choice"
+      | "open"
+      | "both";
 
     const { data: profile } = await context.supabase
       .from("profiles")
@@ -103,37 +112,126 @@ export const generateStepQuestions = createServerFn({ method: "POST" })
     const minutes = profile?.daily_minutes ?? null;
     const count = minutes ? Math.max(4, Math.min(10, Math.round(minutes / 2.5))) : 6;
 
-    const result = await askJson<{
-      questions: { prompt: string; options: string[]; correct_index: number; explanation: string }[];
-    }>(
-      "Je maakt Nederlandse meerkeuzevragen over studiestof. Antwoord uitsluitend met JSON: {\"questions\":[{\"prompt\":string,\"options\":[string,string,string,string],\"correct_index\":number,\"explanation\":string}]}. Precies 4 opties per vraag, exact 1 juist antwoord, uitleg in 1 zin.",
-      `Maak ${count} nieuwe vragen over uitsluitend dit onderdeel van de stof.${
-        level ? `\n\nNiveau van de leerling: ${level}. Stem moeilijkheid en woordkeuze hierop af.` : ""
-      }${goal ? `\n\nDoel van de leerling: ${goal}. Richt de vragen hierop.` : ""}${
-        minutes ? `\n\nDe sessie mag ongeveer ${minutes} minuten duren.` : ""
-      }\n\nOnderdeel (dag ${step.day_index}): ${step.title}\n${step.summary ?? ""}\n\nVOLLEDIGE STOF:\n${source.slice(0, 12000)}`,
+    const shared = `${
+      level ? `\n\nNiveau van de leerling: ${level}. Stem moeilijkheid en woordkeuze hierop af.` : ""
+    }${goal ? `\n\nDoel van de leerling: ${goal}. Richt de vragen hierop.` : ""}${
+      minutes ? `\n\nDe sessie mag ongeveer ${minutes} minuten duren.` : ""
+    }\n\nOnderdeel (dag ${step.day_index}): ${step.title}\n${step.summary ?? ""}\n\nVOLLEDIGE STOF:\n${source.slice(0, 12000)}`;
 
-    );
+    const mcCount = mode === "open" ? 0 : mode === "both" ? Math.ceil(count / 2) : count;
+    const openCount = mode === "multiple_choice" ? 0 : mode === "both" ? Math.floor(count / 2) : count;
 
-    const questions = (result.questions ?? [])
-      .filter((q) => Array.isArray(q.options) && q.options.length >= 2)
-      .slice(0, 8)
-      .map((q, index) => ({
-        step_id: data.stepId,
-        user_id: context.userId,
-        position: index,
-        prompt: q.prompt,
-        options: q.options,
-        correct_index: Math.max(0, Math.min(q.options.length - 1, q.correct_index ?? 0)),
-        explanation: q.explanation ?? null,
-      }));
+    type Row = {
+      step_id: string;
+      user_id: string;
+      position: number;
+      kind: string;
+      prompt: string;
+      options: string[] | null;
+      correct_index: number | null;
+      model_answer: string | null;
+      explanation: string | null;
+    };
+    const rows: Row[] = [];
 
+    if (mcCount > 0) {
+      const result = await askJson<{
+        questions: {
+          prompt: string;
+          options: string[];
+          correct_index: number;
+          explanation: string;
+        }[];
+      }>(
+        "Je maakt Nederlandse meerkeuzevragen over studiestof. Antwoord uitsluitend met JSON: {\"questions\":[{\"prompt\":string,\"options\":[string,string,string,string],\"correct_index\":number,\"explanation\":string}]}. Precies 4 opties per vraag, exact 1 juist antwoord, uitleg in 1 zin.",
+        `Maak ${mcCount} nieuwe meerkeuzevragen over uitsluitend dit onderdeel van de stof.${shared}`,
+      );
+      for (const q of (result.questions ?? []).slice(0, mcCount)) {
+        if (!Array.isArray(q.options) || q.options.length < 2) continue;
+        rows.push({
+          step_id: data.stepId,
+          user_id: context.userId,
+          position: rows.length,
+          kind: "multiple_choice",
+          prompt: q.prompt,
+          options: q.options,
+          correct_index: Math.max(0, Math.min(q.options.length - 1, q.correct_index ?? 0)),
+          model_answer: null,
+          explanation: q.explanation ?? null,
+        });
+      }
+    }
+
+    if (openCount > 0) {
+      const result = await askJson<{
+        questions: { prompt: string; model_answer: string; explanation?: string }[];
+      }>(
+        "Je maakt Nederlandse open vragen over studiestof. Antwoord uitsluitend met JSON: {\"questions\":[{\"prompt\":string,\"model_answer\":string,\"explanation\":string}]}. Elke vraag is te beantwoorden in 1-3 zinnen; model_answer is het volledige juiste antwoord.",
+        `Maak ${openCount} nieuwe open vragen over uitsluitend dit onderdeel van de stof.${shared}`,
+      );
+      for (const q of (result.questions ?? []).slice(0, openCount)) {
+        if (!q.prompt || !q.model_answer) continue;
+        rows.push({
+          step_id: data.stepId,
+          user_id: context.userId,
+          position: rows.length,
+          kind: "open",
+          prompt: q.prompt,
+          options: null,
+          correct_index: null,
+          model_answer: q.model_answer,
+          explanation: q.explanation ?? null,
+        });
+      }
+    }
+
+    const questions = rows;
     if (questions.length === 0) throw new Error("Kon geen vragen genereren.");
 
     const { error } = await context.supabase.from("step_questions").insert(questions);
     if (error) throw new Error(error.message);
     return { created: questions.length };
   });
+
+export const gradeOpenAnswer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({ questionId: z.string().uuid(), answer: z.string().min(1).max(3000) })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: question, error } = await context.supabase
+      .from("step_questions")
+      .select("id, prompt, model_answer, kind")
+      .eq("id", data.questionId)
+      .single();
+    if (error || !question) throw new Error("Vraag niet gevonden.");
+    if (question.kind !== "open") throw new Error("Dit is geen open vraag.");
+
+    const result = await askJson<{ correct: boolean; feedback: string }>(
+      "Je kijkt een open vraag van een Nederlandse leerling na. Antwoord uitsluitend met JSON: {\"correct\":boolean,\"feedback\":string}. Wees eerlijk maar mild: inhoudelijk juist met andere woorden mag ook goed zijn. Feedback in 1-2 zinnen, in het Nederlands, met wat er miste als het niet goed is.",
+      `VRAAG: ${question.prompt}\n\nMODELANTWOORD: ${question.model_answer ?? ""}\n\nANTWOORD VAN DE LEERLING: ${data.answer}`,
+    );
+
+    const correct = !!result.correct;
+    await context.supabase
+      .from("step_questions")
+      .update({
+        answered_correct: correct,
+        user_answer: data.answer,
+        feedback: result.feedback ?? null,
+      })
+      .eq("id", data.questionId);
+
+    return {
+      correct,
+      feedback: result.feedback ?? "",
+      modelAnswer: question.model_answer ?? "",
+    };
+  });
+
+
 
 export const completeStep = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

@@ -41,6 +41,7 @@ function LeerpadOverzicht() {
   const [title, setTitle] = useState("");
   const [sourceText, setSourceText] = useState("");
   const [days, setDays] = useState(5);
+  const [questionMode, setQuestionMode] = useState<"multiple_choice" | "open" | "both">("both");
   const [reading, setReading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
@@ -59,7 +60,9 @@ function LeerpadOverzicht() {
 
   const create = useMutation({
     mutationFn: async () =>
-      generate({ data: { title: title.trim(), sourceText: sourceText.trim(), days } }),
+      generate({
+        data: { title: title.trim(), sourceText: sourceText.trim(), days, questionMode },
+      }),
     onSuccess: async () => {
       toast.success("Leerpad klaar");
       setTitle("");
@@ -217,6 +220,37 @@ function LeerpadOverzicht() {
                 en 1 stap met vragen per dag.
               </p>
             )}
+          </div>
+          <div>
+            <p className="mb-1.5 text-[13px] font-semibold">Soort vragen</p>
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  { value: "multiple_choice", label: "Meerkeuzevragen" },
+                  { value: "open", label: "Open vragen" },
+                  { value: "both", label: "Allebei" },
+                ] as const
+              ).map((option) => {
+                const active = questionMode === option.value;
+                return (
+                  <Pressable
+                    key={option.value}
+                    aria-pressed={active}
+                    onClick={() => setQuestionMode(option.value)}
+                    className={`rounded-full border px-4 py-2 text-[14px] font-semibold ${
+                      active
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border bg-card text-muted-foreground"
+                    }`}
+                  >
+                    {option.label}
+                  </Pressable>
+                );
+              })}
+            </div>
+            <p className="mt-1.5 text-[13px] text-muted-foreground">
+              Bij open vragen typ je je antwoord zelf en kijkt MicroStudy het na met uitleg.
+            </p>
           </div>
           <Pressable
             disabled={create.isPending || sourceText.trim().length < 40 || !title.trim()}

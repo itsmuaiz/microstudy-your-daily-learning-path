@@ -185,10 +185,17 @@ function SessionSheet({ step, onClose }: { step: StepRow; onClose: () => void })
   const reduced = useReducedMotion();
   const generate = useServerFn(generateStepQuestions);
   const finish = useServerFn(completeStep);
+  const grade = useServerFn(gradeOpenAnswer);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [correct, setCorrect] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [openText, setOpenText] = useState("");
+  const [openResult, setOpenResult] = useState<{
+    correct: boolean;
+    feedback: string;
+    modelAnswer: string;
+  } | null>(null);
 
   const questions = useQuery({
     queryKey: ["questions", step.id],
@@ -196,13 +203,13 @@ function SessionSheet({ step, onClose }: { step: StepRow; onClose: () => void })
       await generate({ data: { stepId: step.id } });
       const { data, error } = await supabase
         .from("step_questions")
-        .select("id, prompt, options, correct_index, explanation")
+        .select("id, prompt, options, correct_index, explanation, kind, model_answer")
         .eq("step_id", step.id)
         .order("position");
       if (error) throw error;
       return (data ?? []).map((q) => ({
         ...q,
-        options: (q.options as string[]) ?? [],
+        options: (q.options as string[] | null) ?? [],
       }));
     },
   });
@@ -218,6 +225,29 @@ function SessionSheet({ step, onClose }: { step: StepRow; onClose: () => void })
 
   const list = questions.data ?? [];
   const current = list[index];
+  const isOpen = current?.kind === "open";
+  const answered = isOpen ? openResult !== null : picked !== null;
+
+  const check = useMutation({
+    mutationFn: async () => {
+      if (!current) throw new Error("Geen vraag");
+      return grade({ data: { questionId: current.id, answer: openText.trim() } });
+    },
+    onSuccess: (result) => {
+      setOpenResult(result);
+      const score = correct + (result.correct ? 1 : 0);
+      if (result.correct) setCorrect(score);
+      if (index === list.length - 1) complete.mutate(score);
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Nakijken mislukt"),
+  });
+
+  function next() {
+    setIndex(index + 1);
+    setPicked(null);
+    setOpenText("");
+    setOpenResult(null);
+  }
 
   function answer(option: number) {
     if (picked !== null || !current) return;

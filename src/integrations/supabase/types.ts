@@ -165,38 +165,50 @@ export type Database = {
       step_questions: {
         Row: {
           answered_correct: boolean | null
-          correct_index: number
+          correct_index: number | null
           created_at: string
           explanation: string | null
+          feedback: string | null
           id: string
-          options: Json
+          kind: string
+          model_answer: string | null
+          options: Json | null
           position: number
           prompt: string
           step_id: string
+          user_answer: string | null
           user_id: string
         }
         Insert: {
           answered_correct?: boolean | null
-          correct_index: number
+          correct_index?: number | null
           created_at?: string
           explanation?: string | null
+          feedback?: string | null
           id?: string
-          options: Json
+          kind?: string
+          model_answer?: string | null
+          options?: Json | null
           position?: number
           prompt: string
           step_id: string
+          user_answer?: string | null
           user_id: string
         }
         Update: {
           answered_correct?: boolean | null
-          correct_index?: number
+          correct_index?: number | null
           created_at?: string
           explanation?: string | null
+          feedback?: string | null
           id?: string
-          options?: Json
+          kind?: string
+          model_answer?: string | null
+          options?: Json | null
           position?: number
           prompt?: string
           step_id?: string
+          user_answer?: string | null
           user_id?: string
         }
         Relationships: [
@@ -215,6 +227,7 @@ export type Database = {
           days: number
           exam_date: string | null
           id: string
+          question_mode: string
           source_text: string
           title: string
           user_id: string
@@ -224,6 +237,7 @@ export type Database = {
           days?: number
           exam_date?: string | null
           id?: string
+          question_mode?: string
           source_text: string
           title: string
           user_id: string
@@ -233,6 +247,7 @@ export type Database = {
           days?: number
           exam_date?: string | null
           id?: string
+          question_mode?: string
           source_text?: string
           title?: string
           user_id?: string
