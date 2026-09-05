@@ -41,6 +41,7 @@ function LeerpadOverzicht() {
   const [title, setTitle] = useState("");
   const [sourceText, setSourceText] = useState("");
   const [days, setDays] = useState(5);
+  const [questionMode, setQuestionMode] = useState<"multiple_choice" | "open" | "both">("both");
   const [reading, setReading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
@@ -59,7 +60,9 @@ function LeerpadOverzicht() {
 
   const create = useMutation({
     mutationFn: async () =>
-      generate({ data: { title: title.trim(), sourceText: sourceText.trim(), days } }),
+      generate({
+        data: { title: title.trim(), sourceText: sourceText.trim(), days, questionMode },
+      }),
     onSuccess: async () => {
       toast.success("Leerpad klaar");
       setTitle("");
