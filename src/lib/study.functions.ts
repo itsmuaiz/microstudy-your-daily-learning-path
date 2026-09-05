@@ -193,6 +193,46 @@ export const generateStepQuestions = createServerFn({ method: "POST" })
     return { created: questions.length };
   });
 
+export const gradeOpenAnswer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({ questionId: z.string().uuid(), answer: z.string().min(1).max(3000) })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: question, error } = await context.supabase
+      .from("step_questions")
+      .select("id, prompt, model_answer, kind")
+      .eq("id", data.questionId)
+      .single();
+    if (error || !question) throw new Error("Vraag niet gevonden.");
+    if (question.kind !== "open") throw new Error("Dit is geen open vraag.");
+
+    const result = await askJson<{ correct: boolean; feedback: string }>(
+      "Je kijkt een open vraag van een Nederlandse leerling na. Antwoord uitsluitend met JSON: {\"correct\":boolean,\"feedback\":string}. Wees eerlijk maar mild: inhoudelijk juist met andere woorden mag ook goed zijn. Feedback in 1-2 zinnen, in het Nederlands, met wat er miste als het niet goed is.",
+      `VRAAG: ${question.prompt}\n\nMODELANTWOORD: ${question.model_answer ?? ""}\n\nANTWOORD VAN DE LEERLING: ${data.answer}`,
+    );
+
+    const correct = !!result.correct;
+    await context.supabase
+      .from("step_questions")
+      .update({
+        answered_correct: correct,
+        user_answer: data.answer,
+        feedback: result.feedback ?? null,
+      })
+      .eq("id", data.questionId);
+
+    return {
+      correct,
+      feedback: result.feedback ?? "",
+      modelAnswer: question.model_answer ?? "",
+    };
+  });
+
+
+
 export const completeStep = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
