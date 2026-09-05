@@ -18,15 +18,21 @@ export const generateLearningPath = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: profile } = await context.supabase
       .from("profiles")
-      .select("education_level")
+      .select("education_level, goal, daily_minutes")
       .eq("id", context.userId)
       .maybeSingle();
     const level = profile?.education_level ?? null;
+    const goal = profile?.goal ?? null;
+    const minutes = profile?.daily_minutes ?? null;
 
     const outline = await askJson<{ steps: { title: string; summary: string }[] }>(
       "Je bent een Nederlandse studiecoach. Je verdeelt studiestof in opeenvolgende dagelijkse leerstappen. Antwoord uitsluitend met JSON: {\"steps\":[{\"title\":string,\"summary\":string}]}. De titel is kort (max 6 woorden), de summary beschrijft in 1-2 zinnen precies wat die dag geleerd wordt.",
       `Verdeel deze studiestof in exact ${data.days} leerstappen (1 per dag), oplopend in moeilijkheid en zonder overlap.${
         level ? `\n\nNiveau van de leerling: ${level}. Stem taal en diepgang hierop af.` : ""
+      }${goal ? `\n\nDoel van de leerling: ${goal}. Laat de stappen hieraan bijdragen.` : ""}${
+        minutes
+          ? `\n\nDe leerling wil ongeveer ${minutes} minuten per dag leren. Maak elke stap passend bij die tijdsduur (niet groter).`
+          : ""
       }\n\nTitel: ${data.title}\n\nSTOF:\n${data.sourceText}`,
     );
 
@@ -89,17 +95,22 @@ export const generateStepQuestions = createServerFn({ method: "POST" })
 
     const { data: profile } = await context.supabase
       .from("profiles")
-      .select("education_level")
+      .select("education_level, goal, daily_minutes")
       .eq("id", context.userId)
       .maybeSingle();
     const level = profile?.education_level ?? null;
+    const goal = profile?.goal ?? null;
+    const minutes = profile?.daily_minutes ?? null;
+    const count = minutes ? Math.max(4, Math.min(10, Math.round(minutes / 2.5))) : 6;
 
     const result = await askJson<{
       questions: { prompt: string; options: string[]; correct_index: number; explanation: string }[];
     }>(
       "Je maakt Nederlandse meerkeuzevragen over studiestof. Antwoord uitsluitend met JSON: {\"questions\":[{\"prompt\":string,\"options\":[string,string,string,string],\"correct_index\":number,\"explanation\":string}]}. Precies 4 opties per vraag, exact 1 juist antwoord, uitleg in 1 zin.",
-      `Maak 6 nieuwe vragen over uitsluitend dit onderdeel van de stof.${
+      `Maak ${count} nieuwe vragen over uitsluitend dit onderdeel van de stof.${
         level ? `\n\nNiveau van de leerling: ${level}. Stem moeilijkheid en woordkeuze hierop af.` : ""
+      }${goal ? `\n\nDoel van de leerling: ${goal}. Richt de vragen hierop.` : ""}${
+        minutes ? `\n\nDe sessie mag ongeveer ${minutes} minuten duren.` : ""
       }\n\nOnderdeel (dag ${step.day_index}): ${step.title}\n${step.summary ?? ""}\n\nVOLLEDIGE STOF:\n${source.slice(0, 12000)}`,
 
     );
