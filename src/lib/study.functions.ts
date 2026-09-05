@@ -49,6 +49,7 @@ export const generateLearningPath = createServerFn({ method: "POST" })
         source_text: data.sourceText,
         days: steps.length,
         exam_date: data.examDate ?? null,
+        question_mode: data.questionMode,
       })
       .select()
       .single();
