@@ -123,8 +123,10 @@ export type Database = {
           id: string
           last_active_date: string | null
           last_email_at: string | null
+          last_push_at: string | null
           notifications_enabled: boolean
           onboarded_at: string | null
+          push_stopped: boolean
           streak: number
           xp: number
         }
@@ -139,8 +141,10 @@ export type Database = {
           id: string
           last_active_date?: string | null
           last_email_at?: string | null
+          last_push_at?: string | null
           notifications_enabled?: boolean
           onboarded_at?: string | null
+          push_stopped?: boolean
           streak?: number
           xp?: number
         }
@@ -155,10 +159,45 @@ export type Database = {
           id?: string
           last_active_date?: string | null
           last_email_at?: string | null
+          last_push_at?: string | null
           notifications_enabled?: boolean
           onboarded_at?: string | null
+          push_stopped?: boolean
           streak?: number
           xp?: number
+        }
+        Relationships: []
+      }
+      push_devices: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          last_seen_at: string
+          token: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          token: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          token?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }
