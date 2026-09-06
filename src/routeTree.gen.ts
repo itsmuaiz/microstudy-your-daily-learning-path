@@ -17,6 +17,7 @@ import { Route as AppGroepenRouteImport } from './routes/_app.groepen'
 import { Route as AppWelkomRouteImport } from './routes/_app.welkom'
 import { Route as AppLeerpadIndexRouteImport } from './routes/_app.leerpad.index'
 import { Route as AppLeerpadPathIdRouteImport } from './routes/_app.leerpad.$pathId'
+import { Route as ApiPublicPushCheckRouteImport } from './routes/api/public/push-check'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -57,6 +58,11 @@ const AppLeerpadPathIdRoute = AppLeerpadPathIdRouteImport.update({
   path: '/leerpad/$pathId',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicPushCheckRoute = ApiPublicPushCheckRouteImport.update({
+  id: '/api/public/push-check',
+  path: '/api/public/push-check',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/groepen': typeof AppGroepenRoute
   '/welkom': typeof AppWelkomRoute
   '/leerpad/$pathId': typeof AppLeerpadPathIdRoute
+  '/api/public/push-check': typeof ApiPublicPushCheckRoute
   '/leerpad/': typeof AppLeerpadIndexRoute
 }
 export interface FileRoutesByTo {
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/groepen': typeof AppGroepenRoute
   '/welkom': typeof AppWelkomRoute
   '/leerpad/$pathId': typeof AppLeerpadPathIdRoute
+  '/api/public/push-check': typeof ApiPublicPushCheckRoute
   '/leerpad': typeof AppLeerpadIndexRoute
 }
 export interface FileRoutesById {
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/_app/groepen': typeof AppGroepenRoute
   '/_app/welkom': typeof AppWelkomRoute
   '/_app/leerpad/$pathId': typeof AppLeerpadPathIdRoute
+  '/api/public/push-check': typeof ApiPublicPushCheckRoute
   '/_app/leerpad/': typeof AppLeerpadIndexRoute
 }
 export interface FileRouteTypes {
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/groepen'
     | '/welkom'
     | '/leerpad/$pathId'
+    | '/api/public/push-check'
     | '/leerpad/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
     | '/groepen'
     | '/welkom'
     | '/leerpad/$pathId'
+    | '/api/public/push-check'
     | '/leerpad'
   id:
     | '__root__'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '/_app/groepen'
     | '/_app/welkom'
     | '/_app/leerpad/$pathId'
+    | '/api/public/push-check'
     | '/_app/leerpad/'
   fileRoutesById: FileRoutesById
 }
@@ -123,6 +135,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   InloggenRoute: typeof InloggenRoute
   WachtwoordHerstellenRoute: typeof WachtwoordHerstellenRoute
+  ApiPublicPushCheckRoute: typeof ApiPublicPushCheckRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -183,6 +196,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLeerpadPathIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/push-check': {
+      id: '/api/public/push-check'
+      path: '/api/public/push-check'
+      fullPath: '/api/public/push-check'
+      preLoaderRoute: typeof ApiPublicPushCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -207,6 +227,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   InloggenRoute: InloggenRoute,
   WachtwoordHerstellenRoute: WachtwoordHerstellenRoute,
+  ApiPublicPushCheckRoute: ApiPublicPushCheckRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
