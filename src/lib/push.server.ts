@@ -2,7 +2,7 @@ import { askJson } from "@/lib/ai.server";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/firebase_messaging";
 
-type Decision = { send: boolean; title: string; body: string; reason?: string };
+type Decision = { send: boolean; title: string; body: string; reason?: string | undefined };
 
 export type PushUserContext = {
   displayName: string;
