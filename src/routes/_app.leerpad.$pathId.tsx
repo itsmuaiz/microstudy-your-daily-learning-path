@@ -8,7 +8,7 @@ import { ArrowLeft, Check, Lock, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Pressable } from "@/components/Pressable";
 import { pick, springCalm, springMomentum } from "@/lib/motion";
-import { completeStep, generateStepQuestions } from "@/lib/study.functions";
+import { completeStep, generateStepQuestions, gradeOpenAnswer } from "@/lib/study.functions";
 
 export const Route = createFileRoute("/_app/leerpad/$pathId")({
   head: () => ({
