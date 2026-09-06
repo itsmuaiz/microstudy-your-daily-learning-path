@@ -314,55 +314,101 @@ function SessionSheet({ step, onClose }: { step: StepRow; onClose: () => void })
         {!finished && current && (
           <div className="mt-4">
             <h2 className="text-2xl font-bold">{current.prompt}</h2>
-            <div className="mt-5 space-y-2.5">
-              {current.options.map((option, optionIndex) => {
-                const isCorrect = optionIndex === current.correct_index;
-                const state =
-                  picked === null
-                    ? "idle"
-                    : isCorrect
-                      ? "correct"
-                      : optionIndex === picked
-                        ? "wrong"
-                        : "idle";
-                return (
-                  <Pressable
-                    key={optionIndex}
-                    onClick={() => answer(optionIndex)}
-                    scale={0.985}
-                    className={`w-full rounded-2xl border px-4 py-3 text-left text-[16px] ${
-                      state === "correct"
-                        ? "border-primary bg-primary/10 font-semibold"
-                        : state === "wrong"
-                          ? "border-destructive bg-destructive/10"
-                          : "border-border bg-card"
-                    }`}
-                  >
-                    {option}
-                  </Pressable>
-                );
-              })}
-            </div>
 
-            {picked !== null && (
+            {isOpen ? (
               <div className="mt-5">
-                {current.explanation && (
-                  <p className="text-[15px] leading-relaxed text-muted-foreground">
-                    {current.explanation}
-                  </p>
-                )}
-                {index < list.length - 1 && (
+                <textarea
+                  value={openText}
+                  onChange={(event) => setOpenText(event.target.value)}
+                  disabled={openResult !== null}
+                  rows={5}
+                  placeholder="Typ je antwoord in 1-3 zinnen…"
+                  className="w-full rounded-2xl border border-border bg-card px-4 py-3 text-[16px] leading-relaxed outline-none focus:border-primary disabled:opacity-70"
+                />
+                {openResult === null && (
                   <Pressable
                     onClick={() => {
-                      setIndex(index + 1);
-                      setPicked(null);
+                      if (openText.trim().length < 2) {
+                        toast.error("Schrijf eerst een antwoord.");
+                        return;
+                      }
+                      check.mutate();
                     }}
-                    className="mt-4 w-full rounded-xl bg-primary px-5 py-3 text-[16px] font-semibold text-primary-foreground"
+                    className="mt-3 w-full rounded-xl bg-primary px-5 py-3 text-[16px] font-semibold text-primary-foreground disabled:opacity-60"
                   >
-                    Volgende vraag
+                    {check.isPending ? "Wordt nagekeken…" : "Nakijken"}
                   </Pressable>
                 )}
+                {openResult && (
+                  <div
+                    className={`mt-4 rounded-2xl border p-4 ${
+                      openResult.correct
+                        ? "border-primary bg-primary/10"
+                        : "border-destructive bg-destructive/10"
+                    }`}
+                  >
+                    <p className="text-[16px] font-semibold">
+                      {openResult.correct ? "Goed" : "Nog niet goed"}
+                    </p>
+                    {openResult.feedback && (
+                      <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
+                        {openResult.feedback}
+                      </p>
+                    )}
+                    {openResult.modelAnswer && (
+                      <p className="mt-2 text-[15px] leading-relaxed">
+                        <span className="font-semibold">Modelantwoord: </span>
+                        {openResult.modelAnswer}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
+            ) : (
+              <div className="mt-5 space-y-2.5">
+                {current.options.map((option, optionIndex) => {
+                  const isCorrect = optionIndex === current.correct_index;
+                  const state =
+                    picked === null
+                      ? "idle"
+                      : isCorrect
+                        ? "correct"
+                        : optionIndex === picked
+                          ? "wrong"
+                          : "idle";
+                  return (
+                    <Pressable
+                      key={optionIndex}
+                      onClick={() => answer(optionIndex)}
+                      scale={0.985}
+                      className={`w-full rounded-2xl border px-4 py-3 text-left text-[16px] ${
+                        state === "correct"
+                          ? "border-primary bg-primary/10 font-semibold"
+                          : state === "wrong"
+                            ? "border-destructive bg-destructive/10"
+                            : "border-border bg-card"
+                      }`}
+                    >
+                      {option}
+                    </Pressable>
+                  );
+                })}
+              </div>
+            )}
+
+            {!isOpen && picked !== null && current.explanation && (
+              <p className="mt-5 text-[15px] leading-relaxed text-muted-foreground">
+                {current.explanation}
+              </p>
+            )}
+
+            {answered && index < list.length - 1 && (
+              <Pressable
+                onClick={next}
+                className="mt-4 w-full rounded-xl bg-primary px-5 py-3 text-[16px] font-semibold text-primary-foreground"
+              >
+                Volgende vraag
+              </Pressable>
             )}
 
             <p className="mt-6 text-[13px] text-muted-foreground">
