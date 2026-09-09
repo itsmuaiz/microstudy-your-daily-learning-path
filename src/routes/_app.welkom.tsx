@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  BellRing,
   CalendarClock,
   Flame,
   GraduationCap,
@@ -16,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Pressable } from "@/components/Pressable";
 import { crossFade, pick, springCalm } from "@/lib/motion";
+import { enablePush, pushStatusMessage, type PushStatus } from "@/lib/push";
 
 export const Route = createFileRoute("/_app/welkom")({
   head: () => ({
