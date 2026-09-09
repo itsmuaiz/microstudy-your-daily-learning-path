@@ -1,9 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Flame, Zap, LogOut } from "lucide-react";
-import type { ReactNode } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Flame, Zap, LogOut, Bell, BellOff } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { enablePush, pushStatusMessage } from "@/lib/push";
+import { disablePushDevices, getPushState } from "@/lib/push.functions";
 import { Pressable } from "./Pressable";
 
 export function useProfile() {
