@@ -52,5 +52,41 @@ export const getPushState = createServerFn({ method: "GET" })
       .eq("user_id", context.userId)
       .eq("active", true)
       .limit(1);
-    return { enabled: (data ?? []).length > 0 };
+
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("notify_study, notify_streak, notify_leaderboard, notify_inactivity")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    return {
+      enabled: (data ?? []).length > 0,
+      prefs: {
+        notify_study: profile?.notify_study ?? true,
+        notify_streak: profile?.notify_streak ?? true,
+        notify_leaderboard: profile?.notify_leaderboard ?? true,
+        notify_inactivity: profile?.notify_inactivity ?? true,
+      },
+    };
+  });
+
+export const updatePushPrefs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        notify_study: z.boolean().optional(),
+        notify_streak: z.boolean().optional(),
+        notify_leaderboard: z.boolean().optional(),
+        notify_inactivity: z.boolean().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("profiles")
+      .update(data)
+      .eq("id", context.userId);
+    if (error) throw new Error("Voorkeuren opslaan mislukt.");
+    return { ok: true };
   });
