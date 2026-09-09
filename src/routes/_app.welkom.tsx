@@ -136,6 +136,15 @@ function Welkom() {
   const [level, setLevel] = useState<string | null>(null);
   const [goal, setGoal] = useState<string | null>(null);
   const [minutes, setMinutes] = useState<number | null>(null);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushStatus, setPushStatus] = useState<PushStatus | null>(null);
+
+  async function askPush() {
+    setPushBusy(true);
+    const status = await enablePush();
+    setPushStatus(status);
+    setPushBusy(false);
+  }
 
   const step = steps[index]!;
   const Icon = step.icon;
