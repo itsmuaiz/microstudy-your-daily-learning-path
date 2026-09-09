@@ -285,6 +285,31 @@ function Welkom() {
                 })}
               </div>
             )}
+
+            {picker === "push" && (
+              <div className="mt-6 flex flex-col items-start gap-3">
+                <Pressable
+                  disabled={pushBusy || pushStatus === "registered"}
+                  onClick={() => void askPush()}
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-secondary px-4 py-3 text-[15px] font-semibold text-foreground"
+                >
+                  <BellRing className="size-4" aria-hidden />
+                  {pushStatus === "registered"
+                    ? "Meldingen staan aan"
+                    : pushBusy
+                      ? "Even bezig…"
+                      : "Meldingen aanzetten"}
+                </Pressable>
+                {pushStatus && (
+                  <p className="text-[14px] leading-relaxed text-muted-foreground">
+                    {pushStatusMessage[pushStatus]}
+                  </p>
+                )}
+                <p className="text-[13px] text-muted-foreground">
+                  Je kunt dit overslaan en later aanzetten via het belletje bovenin.
+                </p>
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
 
