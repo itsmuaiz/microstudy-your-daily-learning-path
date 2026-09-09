@@ -125,6 +125,10 @@ export type Database = {
           last_email_at: string | null
           last_push_at: string | null
           notifications_enabled: boolean
+          notify_inactivity: boolean
+          notify_leaderboard: boolean
+          notify_streak: boolean
+          notify_study: boolean
           onboarded_at: string | null
           push_stopped: boolean
           streak: number
@@ -143,6 +147,10 @@ export type Database = {
           last_email_at?: string | null
           last_push_at?: string | null
           notifications_enabled?: boolean
+          notify_inactivity?: boolean
+          notify_leaderboard?: boolean
+          notify_streak?: boolean
+          notify_study?: boolean
           onboarded_at?: string | null
           push_stopped?: boolean
           streak?: number
@@ -161,6 +169,10 @@ export type Database = {
           last_email_at?: string | null
           last_push_at?: string | null
           notifications_enabled?: boolean
+          notify_inactivity?: boolean
+          notify_leaderboard?: boolean
+          notify_streak?: boolean
+          notify_study?: boolean
           onboarded_at?: string | null
           push_stopped?: boolean
           streak?: number
