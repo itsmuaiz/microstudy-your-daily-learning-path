@@ -101,6 +101,12 @@ const steps = [
     body: "MicroStudy verdeelt je stof zo dat een dagelijkse stap ongeveer deze tijd kost.",
     picker: "minutes" as const,
   },
+  {
+    icon: BellRing,
+    title: "Wil je een herinnering krijgen?",
+    body: "MicroStudy stuurt maximaal één melding per dag, alleen als het echt zin heeft: een openstaande stap, een streak die dreigt te breken of een toets die dichtbij komt.",
+    picker: "push" as const,
+  },
 ];
 
 const goalOptions = [
