@@ -26,9 +26,33 @@ export function useProfile() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: profile } = useProfile();
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushNote, setPushNote] = useState<string | null>(null);
+
+  const { data: pushState } = useQuery({
+    queryKey: ["push-state", user?.id],
+    enabled: !!user,
+    queryFn: () => getPushState(),
+  });
+  const pushOn = !!pushState?.enabled;
+
+  async function togglePush() {
+    setPushBusy(true);
+    setPushNote(null);
+    if (pushOn) {
+      await disablePushDevices();
+      setPushNote("Meldingen staan uit op dit apparaat.");
+    } else {
+      const status = await enablePush();
+      setPushNote(pushStatusMessage[status]);
+    }
+    await queryClient.invalidateQueries({ queryKey: ["push-state"] });
+    setPushBusy(false);
+  }
 
   return (
     <div className="min-h-screen">
