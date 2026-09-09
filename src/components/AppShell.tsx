@@ -91,7 +91,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
             <Pressable
               aria-label={pushOn ? "Meldingen uitzetten" : "Meldingen aanzetten"}
-              title={pushOn ? "Meldingen staan aan" : "Meldingen aanzetten"}
+              
               disabled={pushBusy}
               className="rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"
               onClick={() => void togglePush()}
