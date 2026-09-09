@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  BellRing,
   CalendarClock,
   Flame,
   GraduationCap,
@@ -16,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Pressable } from "@/components/Pressable";
 import { crossFade, pick, springCalm } from "@/lib/motion";
+import { enablePush, pushStatusMessage, type PushStatus } from "@/lib/push";
 
 export const Route = createFileRoute("/_app/welkom")({
   head: () => ({
@@ -99,6 +101,12 @@ const steps = [
     body: "MicroStudy verdeelt je stof zo dat een dagelijkse stap ongeveer deze tijd kost.",
     picker: "minutes" as const,
   },
+  {
+    icon: BellRing,
+    title: "Wil je een herinnering krijgen?",
+    body: "MicroStudy stuurt maximaal één melding per dag, alleen als het echt zin heeft: een openstaande stap, een streak die dreigt te breken of een toets die dichtbij komt.",
+    picker: "push" as const,
+  },
 ];
 
 const goalOptions = [
@@ -128,6 +136,15 @@ function Welkom() {
   const [level, setLevel] = useState<string | null>(null);
   const [goal, setGoal] = useState<string | null>(null);
   const [minutes, setMinutes] = useState<number | null>(null);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushStatus, setPushStatus] = useState<PushStatus | null>(null);
+
+  async function askPush() {
+    setPushBusy(true);
+    const status = await enablePush();
+    setPushStatus(status);
+    setPushBusy(false);
+  }
 
   const step = steps[index]!;
   const Icon = step.icon;
@@ -266,6 +283,31 @@ function Welkom() {
                     </Pressable>
                   );
                 })}
+              </div>
+            )}
+
+            {picker === "push" && (
+              <div className="mt-6 flex flex-col items-start gap-3">
+                <Pressable
+                  disabled={pushBusy || pushStatus === "registered"}
+                  onClick={() => void askPush()}
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-secondary px-4 py-3 text-[15px] font-semibold text-foreground"
+                >
+                  <BellRing className="size-4" aria-hidden />
+                  {pushStatus === "registered"
+                    ? "Meldingen staan aan"
+                    : pushBusy
+                      ? "Even bezig…"
+                      : "Meldingen aanzetten"}
+                </Pressable>
+                {pushStatus && (
+                  <p className="text-[14px] leading-relaxed text-muted-foreground">
+                    {pushStatusMessage[pushStatus]}
+                  </p>
+                )}
+                <p className="text-[13px] text-muted-foreground">
+                  Je kunt dit overslaan en later aanzetten via het belletje bovenin.
+                </p>
               </div>
             )}
           </motion.div>

@@ -153,8 +153,13 @@ export const Route = createFileRoute("/api/public/push-check")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const unauthorized = await authenticateCronRequest(request);
-        if (unauthorized) return unauthorized;
+        const secret = process.env["PUSH_CRON_SECRET"];
+        const header = request.headers.get("authorization") ?? "";
+        const ownSecretOk = !!secret && header === `Bearer ${secret}`;
+        if (!ownSecretOk) {
+          const unauthorized = await authenticateCronRequest(request);
+          if (unauthorized) return unauthorized;
+        }
         try {
           return Response.json(await run());
         } catch (error) {

@@ -1,9 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Flame, Zap, LogOut } from "lucide-react";
-import type { ReactNode } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Flame, Zap, LogOut, Bell, BellOff } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { enablePush, pushStatusMessage } from "@/lib/push";
+import { disablePushDevices, getPushState } from "@/lib/push.functions";
 import { Pressable } from "./Pressable";
 
 export function useProfile() {
@@ -24,9 +26,33 @@ export function useProfile() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: profile } = useProfile();
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushNote, setPushNote] = useState<string | null>(null);
+
+  const { data: pushState } = useQuery({
+    queryKey: ["push-state", user?.id],
+    enabled: !!user,
+    queryFn: () => getPushState(),
+  });
+  const pushOn = !!pushState?.enabled;
+
+  async function togglePush() {
+    setPushBusy(true);
+    setPushNote(null);
+    if (pushOn) {
+      await disablePushDevices();
+      setPushNote("Meldingen staan uit op dit apparaat.");
+    } else {
+      const status = await enablePush();
+      setPushNote(pushStatusMessage[status]);
+    }
+    await queryClient.invalidateQueries({ queryKey: ["push-state"] });
+    setPushBusy(false);
+  }
 
   return (
     <div className="min-h-screen">
@@ -63,6 +89,19 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Zap className="size-4" aria-hidden />
               <span className="numeric-display">{profile?.xp ?? 0}</span>
             </span>
+            <Pressable
+              aria-label={pushOn ? "Meldingen uitzetten" : "Meldingen aanzetten"}
+              
+              disabled={pushBusy}
+              className="rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"
+              onClick={() => void togglePush()}
+            >
+              {pushOn ? (
+                <Bell className="size-4 text-primary" aria-hidden />
+              ) : (
+                <BellOff className="size-4" aria-hidden />
+              )}
+            </Pressable>
             <Pressable
               aria-label="Uitloggen"
               className="rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"
