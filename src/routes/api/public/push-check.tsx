@@ -78,6 +78,11 @@ async function run() {
 
     // Langdurige inactiviteit: één laatste melding, daarna stoppen.
     if (daysInactive >= 14) {
+      if (!profile.notify_inactivity) {
+        await supabaseAdmin.from("profiles").update({ push_stopped: true }).eq("id", userId);
+        stopped++;
+        continue;
+      }
       await deliver(
         "Laatste herinnering",
         "Je hebt MicroStudy 2 weken niet gebruikt. Dit is onze laatste melding — open de app wanneer je weer wilt leren.",
