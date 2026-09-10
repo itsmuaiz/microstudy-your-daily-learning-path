@@ -35,6 +35,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: profile } = useProfile();
   const [pushBusy, setPushBusy] = useState(false);
   const [pushNote, setPushNote] = useState<string | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const reduced = useReducedMotion();
 
   const { data: pushState } = useQuery({
     queryKey: ["push-state", user?.id],
