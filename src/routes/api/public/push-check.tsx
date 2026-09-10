@@ -50,6 +50,18 @@ async function run() {
       continue;
     }
 
+    const allowedTopics = [
+      profile.notify_study ? "study" : null,
+      profile.notify_streak ? "streak" : null,
+      profile.notify_leaderboard ? "leaderboard" : null,
+      profile.notify_inactivity ? "inactivity" : null,
+    ].filter((t): t is string => !!t);
+
+    if (allowedTopics.length === 0) {
+      skipped++;
+      continue;
+    }
+
     const daysInactive = daysBetween(profile.last_active_date, now);
 
     const deliver = async (title: string, body: string) => {
