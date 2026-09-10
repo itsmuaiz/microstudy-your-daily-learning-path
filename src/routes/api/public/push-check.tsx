@@ -35,7 +35,7 @@ async function run() {
     const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select(
-        "id, display_name, xp, streak, last_active_date, notifications_enabled, last_push_at, push_stopped, goal, daily_minutes",
+        "id, display_name, xp, streak, last_active_date, notifications_enabled, last_push_at, push_stopped, goal, daily_minutes, notify_study, notify_streak, notify_leaderboard, notify_inactivity",
       )
       .eq("id", userId)
       .single();
