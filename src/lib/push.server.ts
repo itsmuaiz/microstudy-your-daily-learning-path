@@ -17,6 +17,11 @@ export type PushUserContext = {
   stepDueToday: boolean;
   nextExamDate: string | null;
   daysToExam: number | null;
+  /** Onderwerpen waarover deze gebruiker berichten wil: study, streak, leaderboard, inactivity. */
+  allowedTopics: string[];
+  groupCount: number;
+  bestGroupRank: number | null;
+  peersAhead: number;
 };
 
 /** Laat de AI beslissen of een melding vandaag zinvol is. */
