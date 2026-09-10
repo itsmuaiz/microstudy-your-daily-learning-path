@@ -35,7 +35,7 @@ async function run() {
     const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select(
-        "id, display_name, xp, streak, last_active_date, notifications_enabled, last_push_at, push_stopped, goal, daily_minutes",
+        "id, display_name, xp, streak, last_active_date, notifications_enabled, last_push_at, push_stopped, goal, daily_minutes, notify_study, notify_streak, notify_leaderboard, notify_inactivity",
       )
       .eq("id", userId)
       .single();
@@ -46,6 +46,18 @@ async function run() {
 
     // Nooit meer dan één melding per dag.
     if (profile.last_push_at && profile.last_push_at.slice(0, 10) === today) {
+      skipped++;
+      continue;
+    }
+
+    const allowedTopics = [
+      profile.notify_study ? "study" : null,
+      profile.notify_streak ? "streak" : null,
+      profile.notify_leaderboard ? "leaderboard" : null,
+      profile.notify_inactivity ? "inactivity" : null,
+    ].filter((t): t is string => !!t);
+
+    if (allowedTopics.length === 0) {
       skipped++;
       continue;
     }
@@ -66,6 +78,11 @@ async function run() {
 
     // Langdurige inactiviteit: één laatste melding, daarna stoppen.
     if (daysInactive >= 14) {
+      if (!profile.notify_inactivity) {
+        await supabaseAdmin.from("profiles").update({ push_stopped: true }).eq("id", userId);
+        stopped++;
+        continue;
+      }
       await deliver(
         "Laatste herinnering",
         "Je hebt MicroStudy 2 weken niet gebruikt. Dit is onze laatste melding — open de app wanneer je weer wilt leren.",
@@ -98,7 +115,43 @@ async function run() {
       .sort();
     const nextExamDate = examDates[0] ?? null;
 
+    // Leaderboard-context: in welke groepen zit de gebruiker en wie staat boven hem?
+    let groupCount = 0;
+    let bestGroupRank: number | null = null;
+    let peersAhead = 0;
+    if (profile.notify_leaderboard) {
+      const { data: myGroups } = await supabaseAdmin
+        .from("group_members")
+        .select("group_id")
+        .eq("user_id", userId);
+      const groupIds = (myGroups ?? []).map((g) => g.group_id);
+      groupCount = groupIds.length;
+      if (groupIds.length > 0) {
+        const { data: peers } = await supabaseAdmin
+          .from("group_members")
+          .select("user_id, group_id")
+          .in("group_id", groupIds);
+        const peerIds = [...new Set((peers ?? []).map((p) => p.user_id))].filter(
+          (id) => id !== userId,
+        );
+        if (peerIds.length > 0) {
+          const { data: peerProfiles } = await supabaseAdmin
+            .from("profiles")
+            .select("id, xp")
+            .in("id", peerIds);
+          peersAhead = (peerProfiles ?? []).filter((p) => p.xp > profile.xp).length;
+          bestGroupRank = peersAhead + 1;
+        } else {
+          bestGroupRank = 1;
+        }
+      }
+    }
+
     const ctx: PushUserContext = {
+      allowedTopics,
+      groupCount,
+      bestGroupRank,
+      peersAhead,
       displayName: profile.display_name ?? "student",
       streak: profile.streak,
       xp: profile.xp,

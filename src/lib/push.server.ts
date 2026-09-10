@@ -17,12 +17,17 @@ export type PushUserContext = {
   stepDueToday: boolean;
   nextExamDate: string | null;
   daysToExam: number | null;
+  /** Onderwerpen waarover deze gebruiker berichten wil: study, streak, leaderboard, inactivity. */
+  allowedTopics: string[];
+  groupCount: number;
+  bestGroupRank: number | null;
+  peersAhead: number;
 };
 
 /** Laat de AI beslissen of een melding vandaag zinvol is. */
 export async function decidePush(ctx: PushUserContext): Promise<Decision> {
   const result = await askJson<Decision>(
-    'Je beslist of een studie-app vandaag één pushmelding stuurt aan een Nederlandse leerling. Antwoord uitsluitend met JSON: {"send":boolean,"title":string,"body":string,"reason":string}. Stuur alleen bij een duidelijke reden: een openstaande stap voor vandaag, een streak die dreigt te breken, of een toets die dichtbij is. Stuur niet als er niets te doen is of de leerling vandaag al actief was. Titel max 40 tekens, body max 110 tekens, warm en concreet, geen uitroeptekens-spam, geen emoji-reeksen.',
+    'Je beslist of een studie-app vandaag één pushmelding stuurt aan een Nederlandse leerling. Antwoord uitsluitend met JSON: {"send":boolean,"title":string,"body":string,"reason":string}. Stuur alleen bij een duidelijke reden: een openstaande stap voor vandaag, een streak die dreigt te breken, een toets die dichtbij is, of een verschuiving in het groepsleaderboard. BELANGRIJK: het veld allowedTopics bepaalt waarover je mag berichten (study, streak, leaderboard, inactivity). Ga je bericht over een onderwerp dat niet in allowedTopics staat, zet dan send op false. Stuur niet als er niets te doen is of de leerling vandaag al actief was. Titel max 40 tekens, body max 110 tekens, warm en concreet, geen uitroeptekens-spam, geen emoji-reeksen.',
     JSON.stringify(ctx),
   );
   return {

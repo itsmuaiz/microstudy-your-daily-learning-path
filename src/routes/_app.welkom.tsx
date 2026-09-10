@@ -18,6 +18,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Pressable } from "@/components/Pressable";
 import { crossFade, pick, springCalm } from "@/lib/motion";
 import { enablePush, pushStatusMessage, type PushStatus } from "@/lib/push";
+import { NotifyPrefsPanel } from "@/components/NotifyPrefsPanel";
 
 export const Route = createFileRoute("/_app/welkom")({
   head: () => ({
@@ -305,6 +306,12 @@ function Welkom() {
                     {pushStatusMessage[pushStatus]}
                   </p>
                 )}
+                <div className="w-full">
+                  <p className="mb-2 text-[13px] font-semibold text-muted-foreground">
+                    Waarover wil je berichten krijgen?
+                  </p>
+                  <NotifyPrefsPanel />
+                </div>
                 <p className="text-[13px] text-muted-foreground">
                   Je kunt dit overslaan en later aanzetten via het belletje bovenin.
                 </p>

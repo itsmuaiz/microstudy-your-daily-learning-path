@@ -75,17 +75,22 @@ export const updatePushPrefs = createServerFn({ method: "POST" })
   .inputValidator((data) =>
     z
       .object({
-        notify_study: z.boolean().optional(),
-        notify_streak: z.boolean().optional(),
-        notify_leaderboard: z.boolean().optional(),
-        notify_inactivity: z.boolean().optional(),
+        notify_study: z.boolean(),
+        notify_streak: z.boolean(),
+        notify_leaderboard: z.boolean(),
+        notify_inactivity: z.boolean(),
       })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("profiles")
-      .update(data)
+      .update({
+        notify_study: data.notify_study,
+        notify_streak: data.notify_streak,
+        notify_leaderboard: data.notify_leaderboard,
+        notify_inactivity: data.notify_inactivity,
+      })
       .eq("id", context.userId);
     if (error) throw new Error("Voorkeuren opslaan mislukt.");
     return { ok: true };
