@@ -6,6 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { enablePush, pushStatusMessage } from "@/lib/push";
 import { disablePushDevices, getPushState } from "@/lib/push.functions";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { crossFade, springCalm } from "@/lib/motion";
+import { NotifyPrefsPanel } from "./NotifyPrefsPanel";
 import { Pressable } from "./Pressable";
 
 export function useProfile() {
@@ -89,19 +92,60 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Zap className="size-4" aria-hidden />
               <span className="numeric-display">{profile?.xp ?? 0}</span>
             </span>
-            <Pressable
-              aria-label={pushOn ? "Meldingen uitzetten" : "Meldingen aanzetten"}
-              
-              disabled={pushBusy}
-              className="rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"
-              onClick={() => void togglePush()}
-            >
-              {pushOn ? (
-                <Bell className="size-4 text-primary" aria-hidden />
-              ) : (
-                <BellOff className="size-4" aria-hidden />
-              )}
-            </Pressable>
+            <div className="relative">
+              <Pressable
+                aria-label="Meldingen"
+                aria-expanded={panelOpen}
+                className="rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                onClick={() => setPanelOpen((v) => !v)}
+              >
+                {pushOn ? (
+                  <Bell className="size-4 text-primary" aria-hidden />
+                ) : (
+                  <BellOff className="size-4" aria-hidden />
+                )}
+              </Pressable>
+              <AnimatePresence>
+                {panelOpen && (
+                  <motion.div
+                    initial={reduced ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={reduced ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
+                    transition={reduced ? crossFade : springCalm}
+                    className="glass absolute right-0 top-11 z-50 w-[320px] rounded-3xl border border-border p-4 shadow-xl"
+                  >
+                    <p className="text-[15px] font-semibold">Meldingen</p>
+                    <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+                      Maximaal één bericht per dag, alleen als het zin heeft.
+                    </p>
+                    <Pressable
+                      disabled={pushBusy}
+                      onClick={() => void togglePush()}
+                      className={`mt-3 w-full rounded-xl px-4 py-2.5 text-[15px] font-semibold ${
+                        pushOn
+                          ? "border border-border bg-secondary text-foreground"
+                          : "bg-primary text-primary-foreground"
+                      }`}
+                    >
+                      {pushBusy
+                        ? "Even bezig…"
+                        : pushOn
+                          ? "Meldingen uitzetten op dit apparaat"
+                          : "Meldingen aanzetten"}
+                    </Pressable>
+                    {pushNote && (
+                      <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+                        {pushNote}
+                      </p>
+                    )}
+                    <p className="mt-4 mb-2 text-[13px] font-semibold text-muted-foreground">
+                      Waarover wil je berichten krijgen?
+                    </p>
+                    <NotifyPrefsPanel prefs={pushState?.prefs} disabled={!pushOn} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             <Pressable
               aria-label="Uitloggen"
               className="rounded-full p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"
