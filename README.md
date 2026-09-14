@@ -87,4 +87,4 @@ MicroStudy turns study material into a daily learning path: you upload your note
 
 ---
 
-## Architecture & folder structure
+
